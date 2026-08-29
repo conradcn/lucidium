@@ -198,3 +198,15 @@ strict = true
 mypy_path = "src"
 explicit_package_bases = true
 namespace_packages = true
+
+# ``nudenet`` and ``insightface`` live in the optional ``safety``
+# extra, so CI's ``pip install -e .[dev]`` does not install them at
+# all. With them absent mypy raises ``import-not-found`` (not the
+# ``import-untyped`` an installed-but-unstubbed package gives), which
+# means an inline ``# type: ignore[import-untyped]`` is simultaneously
+# wrong (unused) and insufficient (wrong code) depending on whether
+# the extra happens to be installed — a check that flips verdict with
+# the local venv. A per-module override covers both states.
+[[tool.mypy.overrides]]
+module = ["nudenet.*", "insightface.*"]
+ignore_missing_imports = true

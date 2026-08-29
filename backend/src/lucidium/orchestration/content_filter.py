@@ -325,13 +325,13 @@ class _MlContentFilter:
             return True
 
         try:
-            from nudenet import NudeDetector  # type: ignore[import-untyped]  # no stubs / py.typed
+            from nudenet import NudeDetector
         except Exception as exc:
             self._fail_load(f"nudenet not importable ({exc})")
             return False
 
         try:
-            import insightface  # type: ignore[import-untyped]  # no stubs / py.typed
+            import insightface
         except Exception as exc:
             self._fail_load(f"insightface not importable ({exc})")
             return False
