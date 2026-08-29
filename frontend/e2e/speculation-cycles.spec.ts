@@ -274,6 +274,13 @@ const BASE_SETTINGS = {
   typewriter_speed_chars_per_sec: 1000,
   prompt_history_clamp_chars: 12000,
   concurrency: { llm_max_in_flight: 4, image_max_in_flight: 2 },
+  // These specs model an already-configured install. main.tsx routes
+  // to the first-run wizard whenever this flag is falsy (and a missing
+  // field is falsy), so without it every flow below lands on "Welcome
+  // to Lucidium" and the start-screen buttons are torn out from under
+  // Playwright mid-click ("element was detached from the DOM"). Same
+  // reasoning as the happy-path mock in e2e/helpers.ts.
+  first_time_setup_complete: true,
 };
 
 function makeGameSnapshot(currentNodeId: string): Record<string, unknown> {

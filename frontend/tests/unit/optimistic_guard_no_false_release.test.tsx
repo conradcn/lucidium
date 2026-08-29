@@ -9,8 +9,15 @@
  * after some delay.
  *
  * The fix: the guard releases ONLY when (a) ``current_node_id``
- * changes from the value at click time, OR (b) an ``s2c/error``
- * lands. This file exercises both paths.
+ * changes from the value at click time, (b) the backend acks that
+ * the turn finished (``s2c/text/complete`` / ``s2c/play/cancelled``,
+ * both emitted only by the foreground play path — never by a
+ * background asset or summarizer push), or (c) an ``s2c/error``
+ * lands. This file exercises all of those paths.
+ *
+ * (b) closes the mirror-image freeze: a reply that leaves
+ * ``current_node_id`` untouched used to lock the option buttons AND
+ * MainView's click-anywhere advance forever.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -170,6 +177,65 @@ describe("useOptimisticAction guard release semantics", () => {
       (b) => b.textContent === "Continue.",
     ) as HTMLButtonElement;
     expect(cont.disabled).toBe(false);
+  });
+
+  it("releases the guard on s2c/text/complete even when current_node_id does not move", () => {
+    // The backend answered the advance but landed on the node the
+    // player is already on (no-op walk, re-delivered beat). Nothing
+    // in the store changes, so the marker-based release can never
+    // fire — only the turn-finished ack can. Without it the choice
+    // buttons stay dead for the rest of the session.
+    useLucidiumStore.setState({
+      game: makeGameAt("n1", [{ id: "o1", text: "Wait." }]),
+      settings: settingsFixture({ typewriter_speed_chars_per_sec: 1000 }),
+      hasSave: true,
+      status: "open",
+    });
+
+    const { container } = render(<InteractionPanel />);
+    const wait = Array.from(container.querySelectorAll("button")).find(
+      (b) => b.textContent === "Wait.",
+    ) as HTMLButtonElement;
+    act(() => {
+      fireEvent.click(wait);
+    });
+    expect(wait.disabled).toBe(true);
+
+    act(() => {
+      fireWsEvent("s2c/text/complete", { node_id: "n1" });
+    });
+
+    const after = Array.from(container.querySelectorAll("button")).find(
+      (b) => b.textContent === "Wait.",
+    ) as HTMLButtonElement;
+    expect(after.disabled).toBe(false);
+  });
+
+  it("releases the guard when the player cancels the generation", () => {
+    useLucidiumStore.setState({
+      game: makeGameAt("n1", [{ id: "o1", text: "Go." }]),
+      settings: settingsFixture({ typewriter_speed_chars_per_sec: 1000 }),
+      hasSave: true,
+      status: "open",
+    });
+
+    const { container } = render(<InteractionPanel />);
+    const go = Array.from(container.querySelectorAll("button")).find(
+      (b) => b.textContent === "Go.",
+    ) as HTMLButtonElement;
+    act(() => {
+      fireEvent.click(go);
+    });
+    expect(go.disabled).toBe(true);
+
+    act(() => {
+      fireWsEvent("s2c/play/cancelled", { cancelled: true });
+    });
+
+    const after = Array.from(container.querySelectorAll("button")).find(
+      (b) => b.textContent === "Go.",
+    ) as HTMLButtonElement;
+    expect(after.disabled).toBe(false);
   });
 
   it("releases the guard when s2c/error lands (failed advance can be retried)", () => {
