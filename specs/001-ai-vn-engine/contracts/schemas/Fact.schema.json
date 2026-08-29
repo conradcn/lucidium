@@ -1,0 +1,44 @@
+{
+  "$defs": {
+    "FactConfidence": {
+      "enum": [
+        "canon",
+        "inferred"
+      ],
+      "title": "FactConfidence",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "confidence": {
+      "$ref": "#/$defs/FactConfidence",
+      "default": "inferred"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "source_node_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Node Id"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "text"
+  ],
+  "title": "Fact",
+  "type": "object"
+}

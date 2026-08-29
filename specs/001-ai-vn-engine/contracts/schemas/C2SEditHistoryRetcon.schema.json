@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "Apply a global retcon to the entire committed history. The LLM\nrewrites every committed beat AND every character's mutable\nstate (outfit, pose, expression, description, facts) in a single\npass so the timeline reads consistently with the new reality.\n\n``instructions`` is the player's natural-language description of\nwhat should be true (e.g., \"the password was actually 'corvid'\nall along \u2014 fix every mention\" or \"Mira was never a witch, she\nwas a librarian; rewrite scenes accordingly\").",
+  "properties": {
+    "instructions": {
+      "title": "Instructions",
+      "type": "string"
+    }
+  },
+  "required": [
+    "instructions"
+  ],
+  "title": "C2SEditHistoryRetcon",
+  "type": "object"
+}

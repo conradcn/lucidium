@@ -1,0 +1,25 @@
+{
+  "additionalProperties": false,
+  "description": "Result of a ``c2s/settings/validate_api_key`` probe.\n\n``ok`` is True only on a 2xx response from ``/v1/models``. ``status``\nis a short machine-friendly tag the UI maps to a label: ``valid``,\n``unauthorized`` (key rejected), ``unreachable`` (network /\ntimeout / bad URL), or ``invalid_input`` (empty key or URL).\n``message`` is a human-readable explanation suitable for inline\ndisplay next to the input.",
+  "properties": {
+    "message": {
+      "title": "Message",
+      "type": "string"
+    },
+    "ok": {
+      "title": "Ok",
+      "type": "boolean"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "status",
+    "message"
+  ],
+  "title": "S2CSettingsApiKeyValidation",
+  "type": "object"
+}

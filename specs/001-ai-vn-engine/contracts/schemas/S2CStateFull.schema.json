@@ -1,0 +1,1426 @@
+{
+  "$defs": {
+    "AudioSettings": {
+      "additionalProperties": false,
+      "description": "Global audio mixing controls. Applied renderer-side to\nevery audio element the engine drives (background music,\nmain-menu theme, future ambient / SFX layers). The renderer\nmultiplies ``master_volume`` and the per-channel volume into\nthe underlying ``HTMLAudioElement.volume`` \u2014 so a\n``master_volume`` of 0 silences everything regardless of the\nper-channel sliders, and each channel's slider only affects\nthat channel.\n\nAll sliders are 0..1 floats so the UI can map them straight\nto a percent without rescaling. Defaults are quiet enough\nthat music doesn't fight the storyteller's prose on first\nlaunch \u2014 players who want it louder bump the slider rather\nthan us shipping a default that masks dialogue.",
+      "properties": {
+        "master_volume": {
+          "default": 0.7,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Master Volume",
+          "type": "number"
+        },
+        "music_volume": {
+          "default": 0.4,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Music Volume",
+          "type": "number"
+        }
+      },
+      "title": "AudioSettings",
+      "type": "object"
+    },
+    "Character": {
+      "additionalProperties": false,
+      "properties": {
+        "age": {
+          "default": 30,
+          "minimum": 0,
+          "title": "Age",
+          "type": "integer"
+        },
+        "build": {
+          "default": "",
+          "title": "Build",
+          "type": "string"
+        },
+        "bust": {
+          "default": "",
+          "title": "Bust",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decals": {
+          "default": "",
+          "title": "Decals",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "effects": {
+          "default": "",
+          "title": "Effects",
+          "type": "string"
+        },
+        "ethnicity": {
+          "default": "",
+          "title": "Ethnicity",
+          "type": "string"
+        },
+        "expression": {
+          "default": "neutral",
+          "title": "Expression",
+          "type": "string"
+        },
+        "eye_color": {
+          "default": "",
+          "title": "Eye Color",
+          "type": "string"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/Fact"
+          },
+          "title": "Facts",
+          "type": "array"
+        },
+        "gender": {
+          "default": "",
+          "title": "Gender",
+          "type": "string"
+        },
+        "hair_color": {
+          "default": "",
+          "title": "Hair Color",
+          "type": "string"
+        },
+        "hairstyle": {
+          "default": "",
+          "title": "Hairstyle",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "images": {
+          "items": {
+            "$ref": "#/$defs/CharacterImage"
+          },
+          "title": "Images",
+          "type": "array"
+        },
+        "is_player": {
+          "default": false,
+          "title": "Is Player",
+          "type": "boolean"
+        },
+        "kind": {
+          "$ref": "#/$defs/CharacterKind",
+          "default": "human"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "outfit": {
+          "default": "practical everyday clothing",
+          "title": "Outfit",
+          "type": "string"
+        },
+        "physical_description": {
+          "default": "",
+          "title": "Physical Description",
+          "type": "string"
+        },
+        "pose": {
+          "default": "standing",
+          "title": "Pose",
+          "type": "string"
+        },
+        "pronouns": {
+          "default": "",
+          "title": "Pronouns",
+          "type": "string"
+        },
+        "removed": {
+          "default": false,
+          "title": "Removed",
+          "type": "boolean"
+        },
+        "removed_reason": {
+          "default": "",
+          "title": "Removed Reason",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 18446744073709551615,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "skin": {
+          "default": "",
+          "title": "Skin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "seed"
+      ],
+      "title": "Character",
+      "type": "object"
+    },
+    "CharacterAttributeField": {
+      "enum": [
+        "description",
+        "outfit",
+        "pose",
+        "expression",
+        "effects",
+        "decals",
+        "name",
+        "hair_color",
+        "hairstyle",
+        "eye_color",
+        "skin",
+        "build",
+        "bust",
+        "ethnicity",
+        "gender",
+        "kind",
+        "physical_description",
+        "pronouns"
+      ],
+      "title": "CharacterAttributeField",
+      "type": "string"
+    },
+    "CharacterChange": {
+      "additionalProperties": false,
+      "properties": {
+        "character_id": {
+          "title": "Character Id",
+          "type": "string"
+        },
+        "field": {
+          "$ref": "#/$defs/CharacterAttributeField"
+        },
+        "new_value": {
+          "title": "New Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "character_id",
+        "field",
+        "new_value"
+      ],
+      "title": "CharacterChange",
+      "type": "object"
+    },
+    "CharacterImage": {
+      "additionalProperties": false,
+      "properties": {
+        "attributes_snapshot": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Attributes Snapshot",
+          "type": "object"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "identity_hash": {
+          "default": "",
+          "title": "Identity Hash",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "prompt_hash": {
+          "title": "Prompt Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "prompt_hash",
+        "attributes_snapshot"
+      ],
+      "title": "CharacterImage",
+      "type": "object"
+    },
+    "CharacterKind": {
+      "description": "Branches the character generation pipeline.\n\n``human`` (default) flows through the existing structured\nanatomy fields \u2014 gender, ethnicity, hair, eye colour, build,\netc. \u2014 that map cleanly onto SDXL's portrait prior. ``nonhuman``\nskips most of those (a dragon doesn't have ``hair_color``,\na ghost doesn't have ``bust``) and uses the freeform\n``physical_description`` field instead. This lets the\nstoryteller introduce robots, monsters, spirits, animals,\neldritch beings, and the like without forcing them into a\nperson-shaped schema and producing nonsense fields.",
+      "enum": [
+        "human",
+        "nonhuman"
+      ],
+      "title": "CharacterKind",
+      "type": "string"
+    },
+    "ConcurrencyLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "image_max_in_flight": {
+          "default": 2,
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Image Max In Flight",
+          "type": "integer"
+        },
+        "llm_max_in_flight": {
+          "default": 4,
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Llm Max In Flight",
+          "type": "integer"
+        }
+      },
+      "title": "ConcurrencyLimits",
+      "type": "object"
+    },
+    "CostTelemetry": {
+      "additionalProperties": false,
+      "properties": {
+        "dollar_estimate": {
+          "default": 0.0,
+          "title": "Dollar Estimate",
+          "type": "number"
+        },
+        "image_calls": {
+          "default": 0,
+          "title": "Image Calls",
+          "type": "integer"
+        },
+        "latency_ms_total": {
+          "default": 0,
+          "title": "Latency Ms Total",
+          "type": "integer"
+        },
+        "llm_calls": {
+          "default": 0,
+          "title": "Llm Calls",
+          "type": "integer"
+        },
+        "tokens_in": {
+          "default": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "default": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        }
+      },
+      "title": "CostTelemetry",
+      "type": "object"
+    },
+    "DialogNode": {
+      "additionalProperties": false,
+      "properties": {
+        "character_changes": {
+          "items": {
+            "$ref": "#/$defs/CharacterChange"
+          },
+          "title": "Character Changes",
+          "type": "array"
+        },
+        "chosen_option_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chosen Option Id"
+        },
+        "entering_character_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Entering Character Ids",
+          "type": "array"
+        },
+        "generation_metadata": {
+          "$ref": "#/$defs/GenerationMetadata"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "leaving_character_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Leaving Character Ids",
+          "type": "array"
+        },
+        "location_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location Id"
+        },
+        "location_lighting": {
+          "default": "",
+          "title": "Location Lighting",
+          "type": "string"
+        },
+        "location_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location Prompt"
+        },
+        "new_characters": {
+          "items": {
+            "$ref": "#/$defs/NewCharacterDescriptor"
+          },
+          "title": "New Characters",
+          "type": "array"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/DialogOption"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Id"
+        },
+        "premise_hash": {
+          "title": "Premise Hash",
+          "type": "string"
+        },
+        "speaker_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speaker Id"
+        },
+        "state": {
+          "$ref": "#/$defs/DialogNodeState",
+          "default": "speculative"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        }
+      },
+      "required": [
+        "premise_hash"
+      ],
+      "title": "DialogNode",
+      "type": "object"
+    },
+    "DialogNodeState": {
+      "enum": [
+        "speculative",
+        "pending_text",
+        "ready",
+        "committed",
+        "invalidated"
+      ],
+      "title": "DialogNodeState",
+      "type": "string"
+    },
+    "DialogOption": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "DialogOption",
+      "type": "object"
+    },
+    "DialogTree": {
+      "additionalProperties": false,
+      "properties": {
+        "committed_path": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Committed Path",
+          "type": "array"
+        },
+        "nodes": {
+          "additionalProperties": {
+            "$ref": "#/$defs/DialogNode"
+          },
+          "title": "Nodes",
+          "type": "object"
+        },
+        "root_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Root Id"
+        }
+      },
+      "title": "DialogTree",
+      "type": "object"
+    },
+    "DirectionSignal": {
+      "enum": [
+        "stay_focused",
+        "reintroduce_thread",
+        "none"
+      ],
+      "title": "DirectionSignal",
+      "type": "string"
+    },
+    "Environment": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "image_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Path"
+        },
+        "lighting": {
+          "default": "",
+          "title": "Lighting",
+          "type": "string"
+        },
+        "location_label": {
+          "title": "Location Label",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_hash": {
+          "title": "Prompt Hash",
+          "type": "string"
+        },
+        "seed": {
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "location_label",
+        "prompt",
+        "prompt_hash"
+      ],
+      "title": "Environment",
+      "type": "object"
+    },
+    "EvidenceQuote": {
+      "additionalProperties": false,
+      "properties": {
+        "source_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Node Id"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "EvidenceQuote",
+      "type": "object"
+    },
+    "Fact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/FactConfidence",
+          "default": "inferred"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "source_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Node Id"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Fact",
+      "type": "object"
+    },
+    "FactConfidence": {
+      "enum": [
+        "canon",
+        "inferred"
+      ],
+      "title": "FactConfidence",
+      "type": "string"
+    },
+    "Game": {
+      "additionalProperties": false,
+      "properties": {
+        "characters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Character"
+          },
+          "title": "Characters",
+          "type": "object"
+        },
+        "cost_telemetry": {
+          "$ref": "#/$defs/CostTelemetry"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "current_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Node Id"
+        },
+        "dialog_tree": {
+          "$ref": "#/$defs/DialogTree"
+        },
+        "environments": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Environment"
+          },
+          "title": "Environments",
+          "type": "object"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "on_stage": {
+          "items": {
+            "type": "string"
+          },
+          "title": "On Stage",
+          "type": "array"
+        },
+        "schema_version": {
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "world": {
+          "$ref": "#/$defs/WorldState"
+        }
+      },
+      "required": [
+        "world"
+      ],
+      "title": "Game",
+      "type": "object"
+    },
+    "GenerationMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "latency_ms": {
+          "default": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "prompt_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Hash"
+        },
+        "seed_parameters": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "title": "Seed Parameters",
+          "type": "object"
+        },
+        "tokens_in": {
+          "default": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "default": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        }
+      },
+      "title": "GenerationMetadata",
+      "type": "object"
+    },
+    "ImageBackend": {
+      "description": "Where image generation runs.\n\n``embedded`` (the default, see ``ImageSettings.backend``) runs\ndiffusers + an SDXL-family checkpoint inside the engine\nprocess; no external server is involved. ``comfyui`` instead\nspeaks the ComfyUI HTTP API at ``ImageSettings.base_url`` \u2014\nthe player runs ComfyUI as a separate process, possibly on\nanother machine. For the embedded backend the checkpoint is\nloaded from\n``ImageSettings.embedded_models_dir`` and the player picks\nwhich file to use via ``embedded_model_name``.",
+      "enum": [
+        "comfyui",
+        "embedded"
+      ],
+      "title": "ImageBackend",
+      "type": "string"
+    },
+    "ImageSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "auto_gpu_provision": {
+          "default": true,
+          "title": "Auto Gpu Provision",
+          "type": "boolean"
+        },
+        "backend": {
+          "$ref": "#/$defs/ImageBackend",
+          "default": "embedded"
+        },
+        "background_workflow": {
+          "default": "background.workflow.json",
+          "title": "Background Workflow",
+          "type": "string"
+        },
+        "base_url": {
+          "default": "http://127.0.0.1:8000",
+          "title": "Base Url",
+          "type": "string"
+        },
+        "embedded_character_model_name": {
+          "default": "",
+          "title": "Embedded Character Model Name",
+          "type": "string"
+        },
+        "embedded_environment_model_name": {
+          "default": "",
+          "title": "Embedded Environment Model Name",
+          "type": "string"
+        },
+        "embedded_face_detail": {
+          "default": false,
+          "title": "Embedded Face Detail",
+          "type": "boolean"
+        },
+        "embedded_model_name": {
+          "default": "",
+          "title": "Embedded Model Name",
+          "type": "string"
+        },
+        "embedded_models_dir": {
+          "default": "",
+          "title": "Embedded Models Dir",
+          "type": "string"
+        },
+        "portrait_workflow": {
+          "default": "portrait.workflow.json",
+          "title": "Portrait Workflow",
+          "type": "string"
+        },
+        "torch_download_stall_timeout_s": {
+          "default": 120.0,
+          "title": "Torch Download Stall Timeout S",
+          "type": "number"
+        }
+      },
+      "title": "ImageSettings",
+      "type": "object"
+    },
+    "LlmSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "api_key": {
+          "default": "",
+          "format": "password",
+          "title": "Api Key",
+          "type": "string",
+          "writeOnly": true
+        },
+        "base_url": {
+          "default": "https://openrouter.ai/api/v1",
+          "title": "Base Url",
+          "type": "string"
+        },
+        "max_tokens": {
+          "default": 1024,
+          "title": "Max Tokens",
+          "type": "integer"
+        },
+        "model": {
+          "default": "deepseek/deepseek-v3.2-exp",
+          "title": "Model",
+          "type": "string"
+        },
+        "temperature": {
+          "default": 0.8,
+          "title": "Temperature",
+          "type": "number"
+        }
+      },
+      "title": "LlmSettings",
+      "type": "object"
+    },
+    "MusicSettings": {
+      "additionalProperties": false,
+      "description": "ACE-Step background-music generation settings.\n\nThe engine talks to a configurable ACE-Step server (HTTP) \u2014\ntypically the official Gradio-served instance the user runs\nlocally on port 7860. When ``enabled``, every NEW GAME (any\npath: New Game, Surprise Me, save load that produces a fresh\ntrack) generates an instrumental looping background track\nusing a prompt the world_init LLM emits. Mid-game music\nchanges are also supported via the storyteller's beat schema\n(``music_change`` field).\n\nAll fields are advisory \u2014 the actual ACE-Step pipeline\ndecides what they map to. Keeping the request shape generic\nlets the player run any compatible inference server (the\nofficial Gradio app, a custom shim, a hosted endpoint).",
+      "properties": {
+        "base_url": {
+          "default": "http://127.0.0.1:8001",
+          "title": "Base Url",
+          "type": "string"
+        },
+        "clip_seconds": {
+          "default": 60.0,
+          "maximum": 240.0,
+          "minimum": 15.0,
+          "title": "Clip Seconds",
+          "type": "number"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "guidance_scale": {
+          "default": 15.0,
+          "maximum": 30.0,
+          "minimum": 1.0,
+          "title": "Guidance Scale",
+          "type": "number"
+        },
+        "inference_steps": {
+          "default": 27,
+          "maximum": 100,
+          "minimum": 10,
+          "title": "Inference Steps",
+          "type": "integer"
+        },
+        "local_gpu_coordination": {
+          "default": true,
+          "title": "Local Gpu Coordination",
+          "type": "boolean"
+        },
+        "model_name": {
+          "default": "acestep-v15-turbo",
+          "title": "Model Name",
+          "type": "string"
+        }
+      },
+      "title": "MusicSettings",
+      "type": "object"
+    },
+    "NewCharacterDescriptor": {
+      "additionalProperties": false,
+      "description": "Full descriptor for a character introduced by a dialog beat.\n\nThe LLM emits this when a beat references a character ID that\ndoesn't yet exist on the stage. The handler turns each descriptor\ninto a full ``Character`` (assigning a seed) before applying the\nbeat, so ``entering_character_ids`` always resolves cleanly.\n\nThe schema mirrors ``Character`` \u2014 ``kind`` branches the\nrendering pipeline (``human`` \u2192 structured anatomy fields;\n``nonhuman`` \u2192 freeform ``physical_description`` with empty\nanatomy fields). All human-anatomy fields default to empty\nstring so the LLM can omit them on nonhuman entries; the\nportrait builder filters empties out so we don't emit stray\n``\" hair\"`` or ``\"thirty-year-old \"`` tags.",
+      "properties": {
+        "age": {
+          "default": 30,
+          "minimum": 0,
+          "title": "Age",
+          "type": "integer"
+        },
+        "build": {
+          "default": "",
+          "title": "Build",
+          "type": "string"
+        },
+        "bust": {
+          "default": "",
+          "title": "Bust",
+          "type": "string"
+        },
+        "decals": {
+          "default": "",
+          "title": "Decals",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "effects": {
+          "default": "",
+          "title": "Effects",
+          "type": "string"
+        },
+        "ethnicity": {
+          "default": "",
+          "title": "Ethnicity",
+          "type": "string"
+        },
+        "expression": {
+          "default": "neutral",
+          "title": "Expression",
+          "type": "string"
+        },
+        "eye_color": {
+          "default": "",
+          "title": "Eye Color",
+          "type": "string"
+        },
+        "gender": {
+          "default": "",
+          "title": "Gender",
+          "type": "string"
+        },
+        "hair_color": {
+          "default": "",
+          "title": "Hair Color",
+          "type": "string"
+        },
+        "hairstyle": {
+          "default": "",
+          "title": "Hairstyle",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/CharacterKind",
+          "default": "human"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "outfit": {
+          "default": "practical everyday clothing",
+          "title": "Outfit",
+          "type": "string"
+        },
+        "physical_description": {
+          "default": "",
+          "title": "Physical Description",
+          "type": "string"
+        },
+        "pose": {
+          "default": "standing",
+          "title": "Pose",
+          "type": "string"
+        },
+        "pronouns": {
+          "default": "",
+          "title": "Pronouns",
+          "type": "string"
+        },
+        "skin": {
+          "default": "",
+          "title": "Skin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ],
+      "title": "NewCharacterDescriptor",
+      "type": "object"
+    },
+    "PacePreference": {
+      "enum": [
+        "faster",
+        "same",
+        "slower"
+      ],
+      "title": "PacePreference",
+      "type": "string"
+    },
+    "PlayerIntentForecast": {
+      "additionalProperties": false,
+      "properties": {
+        "direction_signal": {
+          "$ref": "#/$defs/DirectionSignal",
+          "default": "none"
+        },
+        "pace_preference": {
+          "$ref": "#/$defs/PacePreference",
+          "default": "same"
+        },
+        "tone_preference": {
+          "$ref": "#/$defs/TonePreference",
+          "default": "unspecified"
+        },
+        "weighted_evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceQuote"
+          },
+          "title": "Weighted Evidence",
+          "type": "array"
+        }
+      },
+      "title": "PlayerIntentForecast",
+      "type": "object"
+    },
+    "PlotStage": {
+      "additionalProperties": false,
+      "description": "One stage of the broad plot arc set up at world init.\n\nThe full ``plot_outline`` (a list of these) is the LLM's\nlong-form plan for the game \u2014 set up at world_init, only\nrevised by the summarizer when the actual story has drifted\nenough that the plan no longer fits. The storyteller never\nsees the full outline; the summarizer pulls the currently-\nactive stage and feeds that one slice to text_gen.\n\nWhy this matters: passing the full multi-stage outline to the\nstoryteller every turn floods it with future-stage spoilers,\ncausing it to dump beats from late stages into the current\nscene. The slice contract keeps the storyteller focused on\n\"what should happen RIGHT NOW\" while the summarizer holds the\nmap of where we are in the longer arc.",
+      "properties": {
+        "goal": {
+          "title": "Goal",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "goal",
+        "summary"
+      ],
+      "title": "PlotStage",
+      "type": "object"
+    },
+    "PlotThread": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "last_referenced_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Referenced Node Id"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "summary"
+      ],
+      "title": "PlotThread",
+      "type": "object"
+    },
+    "Settings": {
+      "additionalProperties": false,
+      "properties": {
+        "audio": {
+          "$ref": "#/$defs/AudioSettings"
+        },
+        "concurrency": {
+          "$ref": "#/$defs/ConcurrencyLimits"
+        },
+        "first_time_setup_complete": {
+          "default": false,
+          "title": "First Time Setup Complete",
+          "type": "boolean"
+        },
+        "image": {
+          "$ref": "#/$defs/ImageSettings"
+        },
+        "learn_user_profile": {
+          "default": true,
+          "title": "Learn User Profile",
+          "type": "boolean"
+        },
+        "llm": {
+          "$ref": "#/$defs/LlmSettings"
+        },
+        "mature_content": {
+          "default": false,
+          "title": "Mature Content",
+          "type": "boolean"
+        },
+        "music": {
+          "$ref": "#/$defs/MusicSettings"
+        },
+        "narrator_style": {
+          "default": "conversational",
+          "title": "Narrator Style",
+          "type": "string"
+        },
+        "prompt_history_clamp_chars": {
+          "default": 12000,
+          "title": "Prompt History Clamp Chars",
+          "type": "integer"
+        },
+        "typewriter_speed_chars_per_sec": {
+          "default": 60,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Typewriter Speed Chars Per Sec",
+          "type": "integer"
+        },
+        "user_profile": {
+          "$ref": "#/$defs/UserProfile"
+        }
+      },
+      "title": "Settings",
+      "type": "object"
+    },
+    "TonePreference": {
+      "enum": [
+        "focus",
+        "chaos",
+        "unspecified"
+      ],
+      "title": "TonePreference",
+      "type": "string"
+    },
+    "UserProfile": {
+      "additionalProperties": false,
+      "description": "Cross-save persistent profile of the player's tastes.\n\nLives on ``Settings`` (not per-save) so a player who starts a\nnew game keeps the preferences they've expressed across past\nsessions. Two parallel sets of buckets, separated by PROVENANCE\nrather than by who is allowed to edit them:\n\n  * ``likes`` / ``dislikes`` / ``notes`` \u2014 originated from the\n    PLAYER through the Settings screen.\n  * ``summarizer_likes`` / ``summarizer_dislikes`` /\n    ``summarizer_notes`` \u2014 inferred by the summarizer LLM from\n    the player's actions across past sessions.\n\nBoth buckets are editable by both parties:\n\n  * The player can add / edit / delete entries in EITHER bucket\n    through the Settings screen \u2014 including pruning summarizer\n    inferences that don't actually match their tastes.\n  * The summarizer writes new inferences into the\n    ``summarizer_*`` bucket (its own provenance) and runs the\n    consolidation pass on it when any bucket hits 10 entries.\n    Player-bucket entries pass through summarizer writes\n    untouched (the summarizer doesn't add to that bucket \u2014 only\n    the player does \u2014 but it can read from it for dedup).\n\nBoth halves feed every storyteller / summarizer prompt \u2014 the LLM\nsees a deduplicated combined list so its inferences don't repeat\nsomething already in either bucket.",
+      "properties": {
+        "dislikes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dislikes",
+          "type": "array"
+        },
+        "dismissed_dislikes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dismissed Dislikes",
+          "type": "array"
+        },
+        "dismissed_likes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dismissed Likes",
+          "type": "array"
+        },
+        "dismissed_notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dismissed Notes",
+          "type": "array"
+        },
+        "likes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Likes",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "summarizer_dislikes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Summarizer Dislikes",
+          "type": "array"
+        },
+        "summarizer_dislikes_scores": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Summarizer Dislikes Scores",
+          "type": "object"
+        },
+        "summarizer_likes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Summarizer Likes",
+          "type": "array"
+        },
+        "summarizer_likes_scores": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Summarizer Likes Scores",
+          "type": "object"
+        },
+        "summarizer_notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Summarizer Notes",
+          "type": "array"
+        },
+        "summarizer_notes_scores": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Summarizer Notes Scores",
+          "type": "object"
+        }
+      },
+      "title": "UserProfile",
+      "type": "object"
+    },
+    "WorldState": {
+      "additionalProperties": false,
+      "properties": {
+        "active_plot_threads": {
+          "items": {
+            "$ref": "#/$defs/PlotThread"
+          },
+          "title": "Active Plot Threads",
+          "type": "array"
+        },
+        "current_stage_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Stage Id"
+        },
+        "dropped_plot_threads": {
+          "items": {
+            "$ref": "#/$defs/PlotThread"
+          },
+          "title": "Dropped Plot Threads",
+          "type": "array"
+        },
+        "game_name": {
+          "title": "Game Name",
+          "type": "string"
+        },
+        "genre": {
+          "title": "Genre",
+          "type": "string"
+        },
+        "music_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Music Path"
+        },
+        "music_prompt": {
+          "default": "",
+          "title": "Music Prompt",
+          "type": "string"
+        },
+        "music_prompt_hash": {
+          "default": "",
+          "title": "Music Prompt Hash",
+          "type": "string"
+        },
+        "overall_plot_direction": {
+          "default": "",
+          "title": "Overall Plot Direction",
+          "type": "string"
+        },
+        "player_intent": {
+          "$ref": "#/$defs/PlayerIntentForecast"
+        },
+        "plot_outline": {
+          "items": {
+            "$ref": "#/$defs/PlotStage"
+          },
+          "title": "Plot Outline",
+          "type": "array"
+        },
+        "prompt_history_clamp_chars": {
+          "default": 12000,
+          "title": "Prompt History Clamp Chars",
+          "type": "integer"
+        },
+        "setting": {
+          "title": "Setting",
+          "type": "string"
+        },
+        "summarizer_assessment": {
+          "default": "",
+          "title": "Summarizer Assessment",
+          "type": "string"
+        },
+        "visual_style": {
+          "title": "Visual Style",
+          "type": "string"
+        }
+      },
+      "required": [
+        "game_name",
+        "setting",
+        "genre",
+        "visual_style"
+      ],
+      "title": "WorldState",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "game": {
+      "$ref": "#/$defs/Game"
+    },
+    "settings": {
+      "$ref": "#/$defs/Settings"
+    }
+  },
+  "required": [
+    "game",
+    "settings"
+  ],
+  "title": "S2CStateFull",
+  "type": "object"
+}

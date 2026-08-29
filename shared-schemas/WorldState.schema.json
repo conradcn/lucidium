@@ -1,0 +1,247 @@
+{
+  "$defs": {
+    "DirectionSignal": {
+      "enum": [
+        "stay_focused",
+        "reintroduce_thread",
+        "none"
+      ],
+      "title": "DirectionSignal",
+      "type": "string"
+    },
+    "EvidenceQuote": {
+      "additionalProperties": false,
+      "properties": {
+        "source_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Node Id"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "EvidenceQuote",
+      "type": "object"
+    },
+    "PacePreference": {
+      "enum": [
+        "faster",
+        "same",
+        "slower"
+      ],
+      "title": "PacePreference",
+      "type": "string"
+    },
+    "PlayerIntentForecast": {
+      "additionalProperties": false,
+      "properties": {
+        "direction_signal": {
+          "$ref": "#/$defs/DirectionSignal",
+          "default": "none"
+        },
+        "pace_preference": {
+          "$ref": "#/$defs/PacePreference",
+          "default": "same"
+        },
+        "tone_preference": {
+          "$ref": "#/$defs/TonePreference",
+          "default": "unspecified"
+        },
+        "weighted_evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceQuote"
+          },
+          "title": "Weighted Evidence",
+          "type": "array"
+        }
+      },
+      "title": "PlayerIntentForecast",
+      "type": "object"
+    },
+    "PlotStage": {
+      "additionalProperties": false,
+      "description": "One stage of the broad plot arc set up at world init.\n\nThe full ``plot_outline`` (a list of these) is the LLM's\nlong-form plan for the game \u2014 set up at world_init, only\nrevised by the summarizer when the actual story has drifted\nenough that the plan no longer fits. The storyteller never\nsees the full outline; the summarizer pulls the currently-\nactive stage and feeds that one slice to text_gen.\n\nWhy this matters: passing the full multi-stage outline to the\nstoryteller every turn floods it with future-stage spoilers,\ncausing it to dump beats from late stages into the current\nscene. The slice contract keeps the storyteller focused on\n\"what should happen RIGHT NOW\" while the summarizer holds the\nmap of where we are in the longer arc.",
+      "properties": {
+        "goal": {
+          "title": "Goal",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "goal",
+        "summary"
+      ],
+      "title": "PlotStage",
+      "type": "object"
+    },
+    "PlotThread": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "last_referenced_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Referenced Node Id"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "summary"
+      ],
+      "title": "PlotThread",
+      "type": "object"
+    },
+    "TonePreference": {
+      "enum": [
+        "focus",
+        "chaos",
+        "unspecified"
+      ],
+      "title": "TonePreference",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "active_plot_threads": {
+      "items": {
+        "$ref": "#/$defs/PlotThread"
+      },
+      "title": "Active Plot Threads",
+      "type": "array"
+    },
+    "current_stage_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Current Stage Id"
+    },
+    "dropped_plot_threads": {
+      "items": {
+        "$ref": "#/$defs/PlotThread"
+      },
+      "title": "Dropped Plot Threads",
+      "type": "array"
+    },
+    "game_name": {
+      "title": "Game Name",
+      "type": "string"
+    },
+    "genre": {
+      "title": "Genre",
+      "type": "string"
+    },
+    "music_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Music Path"
+    },
+    "music_prompt": {
+      "default": "",
+      "title": "Music Prompt",
+      "type": "string"
+    },
+    "music_prompt_hash": {
+      "default": "",
+      "title": "Music Prompt Hash",
+      "type": "string"
+    },
+    "overall_plot_direction": {
+      "default": "",
+      "title": "Overall Plot Direction",
+      "type": "string"
+    },
+    "player_intent": {
+      "$ref": "#/$defs/PlayerIntentForecast"
+    },
+    "plot_outline": {
+      "items": {
+        "$ref": "#/$defs/PlotStage"
+      },
+      "title": "Plot Outline",
+      "type": "array"
+    },
+    "prompt_history_clamp_chars": {
+      "default": 12000,
+      "title": "Prompt History Clamp Chars",
+      "type": "integer"
+    },
+    "setting": {
+      "title": "Setting",
+      "type": "string"
+    },
+    "summarizer_assessment": {
+      "default": "",
+      "title": "Summarizer Assessment",
+      "type": "string"
+    },
+    "visual_style": {
+      "title": "Visual Style",
+      "type": "string"
+    }
+  },
+  "required": [
+    "game_name",
+    "setting",
+    "genre",
+    "visual_style"
+  ],
+  "title": "WorldState",
+  "type": "object"
+}

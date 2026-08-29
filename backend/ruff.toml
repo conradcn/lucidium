@@ -1,0 +1,31 @@
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[lint]
+select = [
+    "E", "F", "W",       # pycodestyle / pyflakes
+    "I",                  # isort
+    "B",                  # bugbear
+    "UP",                 # pyupgrade
+    "ASYNC",              # async pitfalls
+    "RUF",                # ruff-native rules
+]
+ignore = [
+    "E501",  # line length is enforced by formatter
+    # Ambiguous-unicode rules exist to catch homoglyph attacks — Cyrillic
+    # ``а`` masquerading as Latin ``a`` in an identifier or a credential
+    # string. Every hit in this codebase is instead deliberate typography
+    # in prose and in user-facing text: ``×`` in resolutions ("1024×1024",
+    # "3–5× faster") and ``–`` in numeric ranges. Rewriting those to ``x``
+    # and ``-`` would degrade the rendered UI copy and the docs to silence
+    # a warning about an attack that cannot apply to a multiplication sign.
+    # If a genuinely confusable *letter* ever shows up, it will be in an
+    # identifier, where RUF001's sibling checks still fire.
+    "RUF001",  # ambiguous unicode in strings
+    "RUF002",  # ambiguous unicode in docstrings
+    "RUF003",  # ambiguous unicode in comments
+]
+
+[lint.per-file-ignores]
+"tests/**/*.py" = ["B011"]

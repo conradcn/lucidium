@@ -1,0 +1,200 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lucidium"
+version = "0.1.0"
+description = "Lucidium AI-driven visual novel engine — Python orchestration sidecar."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Lucidium Contributors" }]
+dependencies = [
+    "pydantic>=2.6,<3",
+    "websockets>=15,<18",
+    # No upper bound: this is a RUNTIME dependency of a library that
+    # others install alongside their own httpx pin, and a ``<0.28``
+    # ceiling here makes lucidium uninstallable next to anything
+    # tracking current httpx. We use only the stable surface
+    # (``AsyncClient``, ``Response``, ``HTTPStatusError``,
+    # ``Timeout``) plus respx in tests, which tracks httpx itself. If
+    # a future httpx release does break us, pin the specific bad
+    # release rather than re-adding a rolling ceiling.
+    "httpx>=0.27",
+    # Pillow is used by ``orchestration.portrait_post`` to tightly
+    # crop the alpha bbox of RMBG-output portraits before saving,
+    # and by ``scripts.eval_character_consistency`` to composite
+    # iteration grids.
+    "Pillow>=11,<13",
+    # Embedded image-generation backend ships in the default
+    # package so the first-run wizard can default to "Embedded"
+    # without forcing the player through a heavyweight install
+    # step.
+    #
+    # *** WHICH TORCH WHEEL YOU GET, AND WHY THAT IS FINE ***
+    #
+    # ``torch>=2.0`` below resolves against plain PyPI, which on
+    # Windows and Linux is the CPU-only build. That is deliberate:
+    # this project does NOT try to pick an accelerated wheel at
+    # install time. Accelerator selection happens at FIRST RUN, in
+    # ``providers/torch_overlay.py``, which detects the machine's GPU
+    # and downloads the matching flavor (cuda / rocm / directml / xpu)
+    # from ``https://download.pytorch.org/whl/<tag>`` into a writable
+    # overlay directory that is injected onto ``sys.path``. That is
+    # the only mechanism that works for the shipped build too — the
+    # PyInstaller bundle has no pip, and ``lucidium.spec`` excludes
+    # torch from the freeze precisely so the overlay can supply it.
+    #
+    # There used to be a ``[tool.uv.index]`` / ``[tool.uv.sources]``
+    # block here routing torch + torchvision to the cu128 index, plus
+    # a checked-in ``uv.lock``. Nothing invoked uv — not ``start.ps1``,
+    # not ``start.sh``, not CI — so the pin was never applied and the
+    # lockfile was neither refreshed nor validated by anything. Both
+    # were removed rather than wired up: adopting uv would mean a
+    # second, install-time accelerator-selection path that disagrees
+    # with the runtime overlay on every machine whose GPU is not the
+    # one the index was pinned for.
+    #
+    # If you want an accelerated wheel in a dev venv WITHOUT going
+    # through the first-run overlay, install it explicitly and pick
+    # the index yourself, e.g.:
+    #
+    #   pip install --force-reinstall torch torchvision \
+    #       --index-url https://download.pytorch.org/whl/cu130
+    #
+    # (swap ``cu130`` for ``rocm7.2`` / ``xpu`` / ``cpu`` to match your
+    # hardware; keep torch and torchvision on the SAME tag — a mismatch
+    # surfaces as ``torchvision::nms does not exist`` at import and
+    # takes down the whole diffusers chain). macOS has no CUDA; the
+    # default PyPI wheel is already the right one there.
+    #
+    # 0.39 is the floor for Krea 2 support (``Krea2Pipeline`` /
+    # ``Krea2Transformer2DModel`` land there); the embedded backend loads
+    # those classes for any Krea 2 checkpoint in the models folder.
+    "diffusers>=0.39,<0.40",
+    "torch>=2.0",
+    "torchvision>=0.18",
+    "transformers>=5,<6",
+    "huggingface_hub>=1,<2",
+    "accelerate>=0.30,<2",
+    "rembg[cpu]>=2.0,<3",
+    "safetensors>=0.4,<1",
+    # ``opencv-python-headless`` powers the face-detector that
+    # positions the embedded face-detail inpaint pass. Haar
+    # cascade XML files ship with the wheel — no extra model
+    # download. The ``-headless`` variant skips Qt / GUI deps
+    # which the engine never uses; install size stays modest
+    # (~70 MB) and there's no Wayland/X11 friction on Linux.
+    "opencv-python-headless>=5,<6",
+    # ``torchao`` gives native fp8 (e4m3fn) dynamic-activation /
+    # weight quantization for the Qwen-Image transformer — it runs the
+    # GEMMs on the GPU's fp8 tensor cores via ``torch._scaled_mm``
+    # rather than upcasting to bf16 like diffusers' layerwise casting,
+    # which is ~5-7x faster per forward AND keeps the 20B transformer
+    # at ~20 GiB so it fits a 24 GiB card. This is what makes Qwen
+    # usable (matching ComfyUI's fp8 speed); see
+    # ``embedded_image_client._try_qwen_torchao_fp8``. Falls back to
+    # layerwise casting when torchao is absent.
+    "torchao>=0.9",
+    # ``peft`` is the backend diffusers needs to load + fuse the
+    # Qwen-Image-Lightning few-step distill LoRA, which cuts the
+    # transformer forward count from ~60 (30 steps × CFG) to ~8
+    # (8 steps, cfg 1.0). Without it Qwen renders at base-model step
+    # counts. See ``embedded_image_client._apply_qwen_lightning_lora``.
+    "peft>=0.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9,<10",
+    "pytest-asyncio>=1.4,<2",
+    "respx>=0.23,<0.24",
+    # No upper bound: ruff ships lint changes in every minor, and a
+    # ``<0.5`` ceiling meant a contributor running current ruff got a
+    # different verdict than CI — the failure mode is "clean locally,
+    # red in CI" with no way to reproduce. The lint config lives in
+    # ``ruff.toml`` / the ``[tool.ruff]`` block, which is what should
+    # pin behaviour; CI and contributors both resolve to the same
+    # latest ruff.
+    "ruff>=0.4",
+    "mypy>=2,<3",
+]
+# Historically these were optional; they're now part of the default
+# install so the first-run wizard can default to the embedded
+# backend without an extra ``pip install lucidium[embedded]`` step.
+# The extra is kept as an alias so older install commands keep
+# working.
+embedded = []
+# Output-side ML content filter — see ``orchestration/content_filter.py``
+# and SAFETY.md. Optional because the ONNX models add ~200 MB to
+# the install and not every user wants the extra footprint, but
+# STRONGLY RECOMMENDED for any save where ``mature_content`` is on.
+# When these aren't installed the prompt-side and storage-side
+# guards still apply but the output-side backstop is inactive.
+safety = [
+    "nudenet>=3.0,<4",
+    "insightface>=1,<2",
+]
+# Build-time only. ``backend/lucidium.spec`` reaches into PyInstaller
+# internals (``PyInstaller.utils.hooks``, ``collect_*`` helpers, the
+# Analysis/PYZ/EXE/COLLECT object graph), so the bundler version is a
+# hard input to the build, not a floating dev convenience: two builds
+# of the same commit on two machines must not pick up different
+# PyInstaller releases. Pinned exactly and installed explicitly by
+# ``package.ps1`` and ``scripts/package-linux.sh``. Bump deliberately,
+# and re-run a full package on both platforms when you do.
+packaging = [
+    "pyinstaller==6.21.0",
+]
+
+[project.scripts]
+lucidium = "lucidium.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lucidium"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# Default: exclude tests marked ``live`` (real LLM + ComfyUI) and
+# ``embedded_live`` (real diffusers pipeline against an installed
+# checkpoint). Both take many minutes per run and need external
+# dependencies that aren't part of the standard CI venv. Opt in
+# with ``-m live`` or ``-m embedded_live``.
+addopts = "-ra -q -m 'not live and not embedded_live'"
+markers = [
+    "live: requires a real LLM endpoint and ComfyUI; slow (minutes); excluded from default run",
+    "embedded_live: requires the embedded extras (`pip install -e .[embedded]`) and a real SDXL checkpoint at the user's configured ``ImageSettings.embedded_models_dir``. Loads the model into diffusers and renders one PNG per workflow; CPU-only runs take many minutes. Excluded from the default run.",
+]
+filterwarnings = [
+    "error",
+    # pytest-asyncio uses several asyncio APIs that are deprecated in
+    # Python 3.14 (slated for removal in 3.16). Until pytest-asyncio
+    # ships a fix, allow these specific deprecation warnings to
+    # coexist with the strict ``error`` policy.
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning",
+    "ignore:'asyncio.get_event_loop_policy' is deprecated:DeprecationWarning",
+    "ignore:'asyncio.set_event_loop_policy' is deprecated:DeprecationWarning",
+    "ignore::pluggy.PluggyTeardownRaisedWarning",
+    # The foreground-drain refactor (handlers.py
+    # ``_drain_remaining_foreground_chain``) spawns speculation /
+    # asset / music tasks when the chain finalises. Tests that don't
+    # explicitly drain that background work race the event-loop
+    # teardown, which finalises the just-created coroutine before
+    # the loop wraps it — surfaced as
+    # ``RuntimeWarning: coroutine 'X' was never awaited`` and
+    # ``PytestUnraisableExceptionWarning``. Production never closes
+    # the loop while a player is mid-session, so this only matters
+    # at test boundary; the live test class carries the same
+    # ignore via ``@pytest.mark.filterwarnings``.
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+    "ignore:coroutine .* was never awaited:RuntimeWarning",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+explicit_package_bases = true
+namespace_packages = true

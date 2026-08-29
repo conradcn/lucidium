@@ -1,0 +1,40 @@
+{
+  "additionalProperties": false,
+  "description": "Reply to ``c2s/embedded/recommend_model``. ``key`` /\n``display_name`` identify the catalog entry recommended for this\nmachine (``display_name`` fills the wizard's ``<highlight>``);\n``reason`` is a short human-readable WHY for a tooltip. ``models_dir``\nis the resolved target path and ``has_models`` is True when it already\nholds a checkpoint \u2014 the wizard hides the one-click offer in that\ncase. ``approx_bytes`` lets the UI show \"~N GB\" before the download's\nreal Content-Length arrives; it is the TOTAL for the model (the\ncheckpoint plus the text encoder / VAE some families fetch at first\nrender), so the quoted figure is what the player actually pays for on\na metered connection.",
+  "properties": {
+    "approx_bytes": {
+      "default": 0,
+      "title": "Approx Bytes",
+      "type": "integer"
+    },
+    "display_name": {
+      "title": "Display Name",
+      "type": "string"
+    },
+    "has_models": {
+      "default": false,
+      "title": "Has Models",
+      "type": "boolean"
+    },
+    "key": {
+      "title": "Key",
+      "type": "string"
+    },
+    "models_dir": {
+      "default": "",
+      "title": "Models Dir",
+      "type": "string"
+    },
+    "reason": {
+      "default": "",
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "key",
+    "display_name"
+  ],
+  "title": "S2CEmbeddedRecommendedModel",
+  "type": "object"
+}

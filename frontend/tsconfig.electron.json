@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // ``node16`` rather than the classic ``CommonJS``/``Node`` pair:
+    // ``moduleResolution: "Node"`` (node10) is deprecated in TypeScript
+    // 6 and stops working in 7, and it is an ERROR, not a warning, so
+    // it breaks the packaging build outright. ``node16`` picks the
+    // emit format from the nearest package.json ``type`` field —
+    // frontend/package.json has no ``type``, so these ``.ts`` files
+    // still emit CommonJS, which is what Electron's main process
+    // loads (``main: dist-electron/main.js``). Do not add
+    // ``"type": "module"`` to package.json without revisiting this.
+    "module": "node16",
+    "moduleResolution": "node16",
+    "target": "ES2022",
+    "outDir": "dist-electron",
+    "rootDir": "electron",
+    "noEmit": false,
+    "isolatedModules": false,
+    "jsx": "preserve"
+  },
+  "include": ["electron"],
+  "exclude": ["node_modules", "dist", "dist-electron", "src", "tests"]
+}

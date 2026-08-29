@@ -1,0 +1,32 @@
+{
+  "additionalProperties": false,
+  "description": "Reply to ``c2s/music/inventory``. ``ok`` is true when the\nHTTP probe succeeded; on failure ``error`` carries a short,\nuser-facing string the Settings screen can show next to the\nTest Connection button. ``models`` is a flat list of model\nIDs the server reported via ``GET /v1/model_inventory``;\npopulating that endpoint as a flat list \u2014 even when the\nupstream shape is richer \u2014 keeps the renderer simple. The\nrenderer is also free to fall back to a free-text input when\n``ok=false`` so the player can hand-type a model name.",
+  "properties": {
+    "base_url": {
+      "title": "Base Url",
+      "type": "string"
+    },
+    "error": {
+      "default": "",
+      "title": "Error",
+      "type": "string"
+    },
+    "models": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Models",
+      "type": "array"
+    },
+    "ok": {
+      "title": "Ok",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "base_url",
+    "ok"
+  ],
+  "title": "S2CMusicInventory",
+  "type": "object"
+}

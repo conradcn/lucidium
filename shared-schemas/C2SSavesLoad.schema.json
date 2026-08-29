@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "save_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,64}$",
+      "title": "Save Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "save_id"
+  ],
+  "title": "C2SSavesLoad",
+  "type": "object"
+}

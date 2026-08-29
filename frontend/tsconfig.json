@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "forceConsistentCasingInFileNames": true,
+    // No ``baseUrl``: it is deprecated in TypeScript 6 and stops
+    // working in 7. Unprefixed ``paths`` targets now resolve relative
+    // to the directory holding this tsconfig, which is the same
+    // directory ``baseUrl: "."`` used to name — so the mapping below is
+    // unchanged, just spelled the way TS 6+ wants it.
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["./src/shared/*"]
+    },
+    "types": ["vite/client", "vitest/globals"]
+  },
+  "include": ["src", "electron", "tests"],
+  "exclude": ["node_modules", "dist", "dist-electron"]
+}

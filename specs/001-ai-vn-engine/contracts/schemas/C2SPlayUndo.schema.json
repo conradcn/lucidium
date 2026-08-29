@@ -1,0 +1,7 @@
+{
+  "additionalProperties": false,
+  "description": "Pop the most recent advance off the session's undo stack and\nrestore the prior Game state (including character.removed flags\nthat were set during the undone turn).",
+  "properties": {},
+  "title": "C2SPlayUndo",
+  "type": "object"
+}

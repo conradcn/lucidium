@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "new_text": {
+      "title": "New Text",
+      "type": "string"
+    },
+    "node_id": {
+      "title": "Node Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "node_id",
+    "new_text"
+  ],
+  "title": "C2SEditHistory",
+  "type": "object"
+}

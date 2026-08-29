@@ -1,0 +1,92 @@
+{
+  "additionalProperties": false,
+  "description": "Cross-save persistent profile of the player's tastes.\n\nLives on ``Settings`` (not per-save) so a player who starts a\nnew game keeps the preferences they've expressed across past\nsessions. Two parallel sets of buckets, separated by PROVENANCE\nrather than by who is allowed to edit them:\n\n  * ``likes`` / ``dislikes`` / ``notes`` \u2014 originated from the\n    PLAYER through the Settings screen.\n  * ``summarizer_likes`` / ``summarizer_dislikes`` /\n    ``summarizer_notes`` \u2014 inferred by the summarizer LLM from\n    the player's actions across past sessions.\n\nBoth buckets are editable by both parties:\n\n  * The player can add / edit / delete entries in EITHER bucket\n    through the Settings screen \u2014 including pruning summarizer\n    inferences that don't actually match their tastes.\n  * The summarizer writes new inferences into the\n    ``summarizer_*`` bucket (its own provenance) and runs the\n    consolidation pass on it when any bucket hits 10 entries.\n    Player-bucket entries pass through summarizer writes\n    untouched (the summarizer doesn't add to that bucket \u2014 only\n    the player does \u2014 but it can read from it for dedup).\n\nBoth halves feed every storyteller / summarizer prompt \u2014 the LLM\nsees a deduplicated combined list so its inferences don't repeat\nsomething already in either bucket.",
+  "properties": {
+    "dislikes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Dislikes",
+      "type": "array"
+    },
+    "dismissed_dislikes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Dismissed Dislikes",
+      "type": "array"
+    },
+    "dismissed_likes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Dismissed Likes",
+      "type": "array"
+    },
+    "dismissed_notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Dismissed Notes",
+      "type": "array"
+    },
+    "likes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Likes",
+      "type": "array"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    },
+    "summarizer_dislikes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Summarizer Dislikes",
+      "type": "array"
+    },
+    "summarizer_dislikes_scores": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Summarizer Dislikes Scores",
+      "type": "object"
+    },
+    "summarizer_likes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Summarizer Likes",
+      "type": "array"
+    },
+    "summarizer_likes_scores": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Summarizer Likes Scores",
+      "type": "object"
+    },
+    "summarizer_notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Summarizer Notes",
+      "type": "array"
+    },
+    "summarizer_notes_scores": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Summarizer Notes Scores",
+      "type": "object"
+    }
+  },
+  "title": "UserProfile",
+  "type": "object"
+}

@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "attributes_snapshot": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Attributes Snapshot",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "identity_hash": {
+      "default": "",
+      "title": "Identity Hash",
+      "type": "string"
+    },
+    "path": {
+      "title": "Path",
+      "type": "string"
+    },
+    "prompt_hash": {
+      "title": "Prompt Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "path",
+    "prompt_hash",
+    "attributes_snapshot"
+  ],
+  "title": "CharacterImage",
+  "type": "object"
+}

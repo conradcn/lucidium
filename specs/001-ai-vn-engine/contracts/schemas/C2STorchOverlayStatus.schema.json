@@ -1,0 +1,7 @@
+{
+  "additionalProperties": false,
+  "description": "Ask the backend which torch runtime overlay it recommends for\nthis machine, which flavors are already installed, and which is\nactive. Cheap + network-free; the Settings / first-run screen calls\nit to decide whether to offer a download and which button to\nhighlight. Replies with ``s2c/torch_overlay/status``.",
+  "properties": {},
+  "title": "C2STorchOverlayStatus",
+  "type": "object"
+}

@@ -1,0 +1,20 @@
+{
+  "additionalProperties": false,
+  "description": "Ask the backend to verify that ``api_key`` actually authenticates\nagainst ``base_url`` BEFORE saving it. The handler hits the\nOpenAI-compatible ``GET /v1/models`` endpoint with the key as a\nBearer token; a 2xx says the key is good, a 401/403 says it isn't,\nanything else is reported as an unreachable error.\n\nSettings + FirstTimeSetup call this on blur of the key input so the\nplayer gets an immediate signal instead of waiting for the first\nreal prompt round-trip to fail with an opaque \"LLM provider failed\"\nbanner mid-game.\n\nBoth fields are passed explicitly (not pulled from server-side\nsettings) so the user can validate a key BEFORE they commit it to\nthe autosaving Settings store.",
+  "properties": {
+    "api_key": {
+      "title": "Api Key",
+      "type": "string"
+    },
+    "base_url": {
+      "title": "Base Url",
+      "type": "string"
+    }
+  },
+  "required": [
+    "base_url",
+    "api_key"
+  ],
+  "title": "C2SSettingsValidateApiKey",
+  "type": "object"
+}

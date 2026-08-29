@@ -1,0 +1,13 @@
+{
+  "additionalProperties": false,
+  "description": "Probe an ACE-Step server for its model inventory and\nconnection status. Settings UI uses this both as a \"Test\nconnection\" handshake and to populate the model dropdown.\n\nThe optional ``base_url`` lets the renderer probe a URL the\nuser is editing live BEFORE committing it via\n``c2s/settings/update`` \u2014 same pattern as the embedded image\nbackend's ``models_dir`` override. Empty falls through to\n``MusicSettings.base_url``.",
+  "properties": {
+    "base_url": {
+      "default": "",
+      "title": "Base Url",
+      "type": "string"
+    }
+  },
+  "title": "C2SMusicInventory",
+  "type": "object"
+}

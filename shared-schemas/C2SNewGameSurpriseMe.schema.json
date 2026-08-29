@@ -1,0 +1,7 @@
+{
+  "additionalProperties": false,
+  "description": "Skip the interview entirely. The backend asks the LLM to\nconstruct a scenario tailored to the player's cross-save\nprofile (likes / dislikes / notes) and re-uses the most recent\nsave's visual style. When no save exists yet, the visual style\nfalls back to the first hardcoded option.",
+  "properties": {},
+  "title": "C2SNewGameSurpriseMe",
+  "type": "object"
+}

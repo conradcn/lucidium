@@ -1,0 +1,13 @@
+{
+  "additionalProperties": false,
+  "description": "Request the list of safetensors / ckpt files in the configured\nembedded-backend models directory. Settings UI populates the\n\"model\" dropdown from the reply. Empty ``models_dir`` means\n\"use the default\" \u2014 same fallback rule as\n``ImageSettings.embedded_models_dir``.",
+  "properties": {
+    "models_dir": {
+      "default": "",
+      "title": "Models Dir",
+      "type": "string"
+    }
+  },
+  "title": "C2SEmbeddedListModels",
+  "type": "object"
+}

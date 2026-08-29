@@ -1,0 +1,22 @@
+{
+  "additionalProperties": false,
+  "description": "Global audio mixing controls. Applied renderer-side to\nevery audio element the engine drives (background music,\nmain-menu theme, future ambient / SFX layers). The renderer\nmultiplies ``master_volume`` and the per-channel volume into\nthe underlying ``HTMLAudioElement.volume`` \u2014 so a\n``master_volume`` of 0 silences everything regardless of the\nper-channel sliders, and each channel's slider only affects\nthat channel.\n\nAll sliders are 0..1 floats so the UI can map them straight\nto a percent without rescaling. Defaults are quiet enough\nthat music doesn't fight the storyteller's prose on first\nlaunch \u2014 players who want it louder bump the slider rather\nthan us shipping a default that masks dialogue.",
+  "properties": {
+    "master_volume": {
+      "default": 0.7,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Master Volume",
+      "type": "number"
+    },
+    "music_volume": {
+      "default": 0.4,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Music Volume",
+      "type": "number"
+    }
+  },
+  "title": "AudioSettings",
+  "type": "object"
+}

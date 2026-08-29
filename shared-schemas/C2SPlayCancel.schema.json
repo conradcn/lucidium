@@ -1,0 +1,7 @@
+{
+  "additionalProperties": false,
+  "description": "Stop the generation the player is currently waiting on.\n\nCancels the foreground LLM stream for the in-flight turn (and the\nbackground task draining the rest of its beat chain). Speculative\nbranches, summarizer passes and queued renders are deliberately\nleft alone \u2014 those are not what the player is staring at, and\nkilling them would only make the next turn slower.",
+  "properties": {},
+  "title": "C2SPlayCancel",
+  "type": "object"
+}

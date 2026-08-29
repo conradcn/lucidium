@@ -1,0 +1,12 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "preview_character_slug": {
+      "default": "",
+      "title": "Preview Character Slug",
+      "type": "string"
+    }
+  },
+  "title": "C2SNewGameStart",
+  "type": "object"
+}

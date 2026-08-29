@@ -1,0 +1,174 @@
+{
+    "1": {
+        "class_type": "CheckpointLoaderSimple",
+        "inputs": {
+            "ckpt_name": "dreamshaperXL10_alpha2Xl10.safetensors"
+        }
+    },
+    "2": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+            "text": "PLACEHOLDER_POSITIVE_PROMPT",
+            "clip": ["1", 1]
+        }
+    },
+    "3": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+            "text": "blurry, low quality, watermark, text, extra limbs, deformed hands, deformed face, asymmetrical eyes, cropped, close-up, head shot, bust shot, portrait crop, cut off legs, cut off feet, out of frame, back view, side view, profile, facing away, turned away, multiple people, PLACEHOLDER_NEGATIVE_EXTRAS",
+            "clip": ["1", 1]
+        }
+    },
+    "4": {
+        "class_type": "EmptyLatentImage",
+        "inputs": {
+            "width": 832,
+            "height": 1216,
+            "batch_size": 1
+        }
+    },
+    "20": {
+        "class_type": "RandomNoise",
+        "inputs": {
+            "noise_seed": 0
+        }
+    },
+    "21": {
+        "class_type": "KSamplerSelect",
+        "inputs": {
+            "sampler_name": "euler_ancestral"
+        }
+    },
+    "22": {
+        "class_type": "BasicScheduler",
+        "inputs": {
+            "model": ["1", 0],
+            "scheduler": "normal",
+            "steps": 20,
+            "denoise": 1.0
+        }
+    },
+    "30": {
+        "class_type": "ControlNetLoader",
+        "inputs": {
+            "control_net_name": "OpenPoseXL2.safetensors"
+        }
+    },
+    "31": {
+        "class_type": "LoadImage",
+        "inputs": {
+            "image": "idle_pose_reference.png"
+        }
+    },
+    "32": {
+        "class_type": "ControlNetApplyAdvanced",
+        "inputs": {
+            "positive": ["2", 0],
+            "negative": ["3", 0],
+            "control_net": ["30", 0],
+            "image": ["31", 0],
+            "strength": 0.0,
+            "start_percent": 0.0,
+            "end_percent": 0.6
+        }
+    },
+    "23": {
+        "class_type": "CFGGuider",
+        "inputs": {
+            "model": ["1", 0],
+            "positive": ["32", 0],
+            "negative": ["32", 1],
+            "cfg": 7.0
+        }
+    },
+    "5": {
+        "class_type": "SamplerCustomAdvanced",
+        "inputs": {
+            "noise": ["20", 0],
+            "guider": ["23", 0],
+            "sampler": ["21", 0],
+            "sigmas": ["22", 0],
+            "latent_image": ["4", 0]
+        }
+    },
+    "6": {
+        "class_type": "VAEDecode",
+        "inputs": {
+            "samples": ["5", 0],
+            "vae": ["1", 2]
+        }
+    },
+    "10": {
+        "class_type": "UltralyticsDetectorProvider",
+        "inputs": {
+            "model_name": "bbox/face_yolov8m.pt"
+        }
+    },
+    "11": {
+        "class_type": "SAMLoader",
+        "inputs": {
+            "model_name": "sam_vit_b_01ec64.pth",
+            "device_mode": "AUTO"
+        }
+    },
+    "12": {
+        "class_type": "FaceDetailer",
+        "inputs": {
+            "image": ["6", 0],
+            "model": ["1", 0],
+            "clip": ["1", 1],
+            "vae": ["1", 2],
+            "positive": ["2", 0],
+            "negative": ["3", 0],
+            "bbox_detector": ["10", 0],
+            "sam_model_opt": ["11", 0],
+            "wildcard": "PLACEHOLDER_FACE_PROMPT",
+            "guide_size": 512,
+            "guide_size_for": true,
+            "max_size": 1024,
+            "seed": 0,
+            "steps": 20,
+            "cfg": 7.0,
+            "sampler_name": "euler_ancestral",
+            "scheduler": "normal",
+            "denoise": 0.5,
+            "feather": 5,
+            "noise_mask": true,
+            "force_inpaint": true,
+            "bbox_threshold": 0.5,
+            "bbox_dilation": 10,
+            "bbox_crop_factor": 3.0,
+            "sam_detection_hint": "center-1",
+            "sam_dilation": 0,
+            "sam_threshold": 0.93,
+            "sam_bbox_expansion": 0,
+            "sam_mask_hint_threshold": 0.7,
+            "sam_mask_hint_use_negative": "False",
+            "drop_size": 10,
+            "cycle": 1,
+            "inpaint_model": false,
+            "noise_mask_feather": 20
+        }
+    },
+    "14": {
+        "class_type": "RMBG",
+        "inputs": {
+            "image": ["12", 0],
+            "model": "RMBG-2.0",
+            "sensitivity": 1,
+            "process_res": 1024,
+            "mask_blur": 0,
+            "mask_offset": 0,
+            "invert_output": false,
+            "refine_foreground": false,
+            "background": "Alpha",
+            "background_color": "#222222"
+        }
+    },
+    "7": {
+        "class_type": "PreviewImage",
+        "inputs": {
+            "images": ["14", 0]
+        }
+    }
+}

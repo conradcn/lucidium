@@ -1,0 +1,211 @@
+/**
+ * Non-blocking interview contract under a slow LLM.
+ *
+ * The new game flow promises that every step transition appears
+ * IMMEDIATELY, even when the LLM that produces the next step's
+ * options is slow. The renderer should:
+ *   1. Receive a state/patch that flips ``/interview/step`` and
+ *      includes empty options for the next step.
+ *   2. Display the next step's heading + a "generating options"
+ *      affordance while the LLM is still in flight.
+ *   3. Patch the options into the grid via a follow-up state/patch
+ *      whenever the backend's prefetch finally lands.
+ *
+ * Step layout:
+ *   * Setting (Step 1) — hard-coded options, inline.
+ *   * Visual Style (Step 2) — hard-coded options, inline. NO LLM
+ *     loading state ever appears here; if it does, the backend has
+ *     regressed to LLM-fetching visual styles.
+ *   * Genre (Step 3) — hard-coded options, inline.
+ *   * Character Description (Step 4) — LLM-driven; SLOW path tested.
+ *   * Name (Step 5) — LLM-driven; SLOW path tested.
+ *
+ * This spec injects a 5-second LLM delay into the LLM-driven steps.
+ * The step transitions MUST appear inside ~600 ms; the options for
+ * the LLM-driven steps MUST appear later, before the test ends.
+ */
+
+import { test, expect } from "@playwright/test";
+
+import { APP_URL, installMockWs } from "./helpers";
+
+const SLOW_DELIVERY_MS = 5_000;
+const IMMEDIATE_MS = 600; // Includes the in-renderer click latency on slow CI.
+
+test.describe("Interview: non-blocking transitions under a slow LLM", () => {
+  test("each step appears immediately; options arrive via follow-up patch", async ({
+    page,
+  }) => {
+    await installMockWs(page);
+    await page.addInitScript({
+      content: `
+(() => {
+  const SLOW_MS = ${SLOW_DELIVERY_MS};
+  // The mock simulates the real backend's two-message protocol for
+  // LLM-driven steps: a SYNCHRONOUS state/patch flipping the step
+  // pointer (with empty options), followed by a deferred state/patch
+  // carrying the options once the simulated LLM finishes.
+  function transition(stepFrom, fieldFrom, valueFrom, stepTo, optionsField, slowOptions) {
+    return [
+      // Inline transition — fires immediately.
+      { type: "s2c/state/patch", payload: { ops: [
+        { op: "replace", path: "/interview/" + fieldFrom, value: valueFrom },
+        { op: "replace", path: "/interview/step", value: stepTo },
+        ...(optionsField ? [{ op: "replace", path: optionsField, value: [] }] : []),
+      ] } },
+      // Deferred options — arrives after SLOW_MS.
+      ...(optionsField && slowOptions ? [{
+        type: "s2c/state/patch",
+        payload: { ops: [{ op: "replace", path: optionsField, value: slowOptions }] },
+        __delayMs: SLOW_MS,
+      }] : []),
+    ];
+  }
+
+  window.__lucidium.handlers["c2s/hello"] = function () {
+    return [{ type: "s2c/hello", payload: { protocol_version: 1, has_save: false } }];
+  };
+  window.__lucidium.handlers["c2s/saves/list"] = function () {
+    return [{ type: "s2c/saves/list", payload: { saves: [] } }];
+  };
+  window.__lucidium.handlers["c2s/new_game/start"] = function () {
+    return [{
+      type: "s2c/state/patch",
+      payload: { ops: [{
+        op: "replace", path: "/interview",
+        value: { step: "setting", setting_options: ["stone harbor"] },
+      }] },
+    }];
+  };
+  window.__lucidium.handlers["c2s/new_game/answer"] = function (payload) {
+    if (payload.step === "setting") {
+      // Setting → Visual Style. Visual styles are HARD-CODED — they
+      // ride along inline. There is no slow path here. (If the
+      // backend ever regresses and starts LLM-fetching visual
+      // styles, this mock will keep working but the real app will
+      // show a loading spinner — caught by the backend assertion in
+      // test_interview_parallelism.)
+      return [{
+        type: "s2c/state/patch",
+        payload: { ops: [
+          { op: "replace", path: "/interview/setting", value: payload.answer },
+          { op: "replace", path: "/interview/step", value: "visual_style" },
+          { op: "replace", path: "/interview/visual_style_options", value: ["ink wash", "anime", "noir"] },
+        ] },
+      }];
+    }
+    if (payload.step === "visual_style") {
+      // Visual Style → Genre. Genre is hard-coded; inline.
+      return [{
+        type: "s2c/state/patch",
+        payload: { ops: [
+          { op: "replace", path: "/interview/visual_style", value: payload.answer },
+          { op: "replace", path: "/interview/step", value: "genre" },
+          { op: "replace", path: "/interview/genre_options", value: ["Mystery", "Romance", "Horror"] },
+        ] },
+      }];
+    }
+    if (payload.step === "genre") {
+      // Genre → Character. SLOW (LLM-driven).
+      return transition(
+        "genre", "genre", payload.answer,
+        "character_description", "/interview/character_description_options",
+        ["wry archivist", "retired bounty hunter"]
+      );
+    }
+    if (payload.step === "character_description") {
+      // Character → Name. SLOW (LLM-driven).
+      return transition(
+        "character_description", "character_description", payload.answer,
+        "name", "/interview/name_options",
+        ["Iris Vale", "Hale Stone"]
+      );
+    }
+    if (payload.step === "name") {
+      return [{
+        type: "s2c/state/patch",
+        payload: { ops: [
+          { op: "replace", path: "/interview/character_name", value: payload.answer },
+          { op: "replace", path: "/interview/step", value: "confirm" },
+        ] },
+      }];
+    }
+    return [];
+  };
+})();
+`,
+    });
+
+    await page.goto(APP_URL);
+    await page.getByRole("button", { name: "New Game" }).click();
+    await expect(page.getByTestId("interview-setting")).toBeVisible();
+
+    // 1. Setting → Visual Style. Visual style options are HARD-CODED
+    //    so they MUST arrive inline — no loading state. If a loading
+    //    wrap shows up here, the backend has regressed to LLM-fetching
+    //    visual styles.
+    let before = Date.now();
+    await page.getByRole("button", { name: "stone harbor" }).click();
+    await expect(page.getByTestId("interview-visual_style")).toBeVisible({
+      timeout: IMMEDIATE_MS,
+    });
+    let elapsed = Date.now() - before;
+    expect(elapsed, `setting→visual_style transition was ${elapsed} ms`).toBeLessThanOrEqual(
+      IMMEDIATE_MS,
+    );
+    // No loading affordance — the options grid is up immediately.
+    await expect(page.getByTestId("interview-loading")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "ink wash" })).toBeVisible();
+
+    // 2. Visual Style → Genre. Hard-coded — instant on every count.
+    before = Date.now();
+    await page.getByRole("button", { name: "ink wash" }).click();
+    await expect(page.getByTestId("interview-genre")).toBeVisible({
+      timeout: IMMEDIATE_MS,
+    });
+    elapsed = Date.now() - before;
+    expect(elapsed, `visual_style→genre transition was ${elapsed} ms`).toBeLessThanOrEqual(
+      IMMEDIATE_MS,
+    );
+    await expect(page.getByTestId("interview-loading")).toHaveCount(0);
+
+    // 3. Genre → Character Description. SLOW (LLM-driven).
+    before = Date.now();
+    await page.getByRole("button", { name: "Mystery", exact: true }).click();
+    await expect(page.getByTestId("interview-loading-wrap")).toBeVisible({
+      timeout: IMMEDIATE_MS,
+    });
+    elapsed = Date.now() - before;
+    expect(elapsed, `genre→character transition was ${elapsed} ms`).toBeLessThanOrEqual(
+      IMMEDIATE_MS,
+    );
+    await expect(
+      page.getByRole("button", { name: "wry archivist" }),
+    ).toBeVisible({ timeout: SLOW_DELIVERY_MS + 1_000 });
+
+    // 4. Character → Name. SLOW.
+    before = Date.now();
+    await page.getByRole("button", { name: "wry archivist" }).click();
+    await expect(page.getByTestId("interview-loading-wrap")).toBeVisible({
+      timeout: IMMEDIATE_MS,
+    });
+    elapsed = Date.now() - before;
+    expect(elapsed, `character→name transition was ${elapsed} ms`).toBeLessThanOrEqual(
+      IMMEDIATE_MS,
+    );
+    await expect(
+      page.getByRole("button", { name: "Iris Vale" }),
+    ).toBeVisible({ timeout: SLOW_DELIVERY_MS + 1_000 });
+
+    // 5. Name → Review. Inline.
+    before = Date.now();
+    await page.getByRole("button", { name: "Iris Vale" }).click();
+    await expect(page.getByRole("heading", { name: "Review" })).toBeVisible({
+      timeout: IMMEDIATE_MS,
+    });
+    elapsed = Date.now() - before;
+    expect(elapsed, `name→review transition was ${elapsed} ms`).toBeLessThanOrEqual(
+      IMMEDIATE_MS,
+    );
+  });
+});

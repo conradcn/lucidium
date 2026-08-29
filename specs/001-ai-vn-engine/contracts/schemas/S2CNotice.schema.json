@@ -1,0 +1,34 @@
+{
+  "$defs": {
+    "NoticeKind": {
+      "enum": [
+        "info",
+        "warning"
+      ],
+      "title": "NoticeKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One-off pop-up for the renderer to display in a modal window.\n\nUsed for safety / policy events the player needs to see (e.g. an\nautomatic age-correction retcon when an under-18 character was\ndescribed in a way that would have produced an unsafe SDXL\nrender). NOT a substitute for s2c/error \u2014 errors are operational\nfailures; notices are informational.",
+  "properties": {
+    "body": {
+      "title": "Body",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/NoticeKind",
+      "default": "info"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "body"
+  ],
+  "title": "S2CNotice",
+  "type": "object"
+}

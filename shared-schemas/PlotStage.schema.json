@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "description": "One stage of the broad plot arc set up at world init.\n\nThe full ``plot_outline`` (a list of these) is the LLM's\nlong-form plan for the game \u2014 set up at world_init, only\nrevised by the summarizer when the actual story has drifted\nenough that the plan no longer fits. The storyteller never\nsees the full outline; the summarizer pulls the currently-\nactive stage and feeds that one slice to text_gen.\n\nWhy this matters: passing the full multi-stage outline to the\nstoryteller every turn floods it with future-stage spoilers,\ncausing it to dump beats from late stages into the current\nscene. The slice contract keeps the storyteller focused on\n\"what should happen RIGHT NOW\" while the summarizer holds the\nmap of where we are in the longer arc.",
+  "properties": {
+    "goal": {
+      "title": "Goal",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "goal",
+    "summary"
+  ],
+  "title": "PlotStage",
+  "type": "object"
+}

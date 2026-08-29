@@ -1,0 +1,83 @@
+# Playwright end-to-end gate.
+#
+# The specs live in ``frontend/e2e/`` (playwright.config.ts sets
+# ``testDir: "./e2e"``) and were previously reachable only through
+# ``tasks.ps1 e2e`` / ``tasks.sh e2e`` — i.e. never in CI. The
+# ``process.env.CI`` branches in playwright.config.ts (forbidOnly,
+# retries: 2, reporter: "github") were written for this job.
+#
+# What runs here: the mocked-WebSocket specs, which need no backend,
+# no API key and no model weights. The ``live-*`` specs and
+# ``image-pipeline-live`` self-skip via ``LUCIDIUM_SKIP_LIVE=1`` (they
+# require a real LLM endpoint and/or a running ComfyUI); the Electron
+# specs self-skip when ``frontend/dist-electron`` is absent. Skips are
+# reported as skips — this job does not claim to cover the live paths.
+
+name: e2e
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      CI: "true"
+      # Live specs need a real provider + ComfyUI; they are not part of
+      # the offline gate and skip themselves when this is set.
+      LUCIDIUM_SKIP_LIVE: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci || npm install
+
+      # Cache the browser download (~140 MB) keyed on the resolved
+      # @playwright/test version so a lockfile bump refetches.
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium
+
+      # Several specs assert against the built renderer / Electron main.
+      # Building here means they run instead of self-skipping.
+      - name: Build renderer
+        run: npm run build
+
+      - name: Run Playwright specs
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          retention-days: 7
+          if-no-files-found: ignore

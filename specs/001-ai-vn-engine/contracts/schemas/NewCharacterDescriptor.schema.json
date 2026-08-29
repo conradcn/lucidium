@@ -1,0 +1,121 @@
+{
+  "$defs": {
+    "CharacterKind": {
+      "description": "Branches the character generation pipeline.\n\n``human`` (default) flows through the existing structured\nanatomy fields \u2014 gender, ethnicity, hair, eye colour, build,\netc. \u2014 that map cleanly onto SDXL's portrait prior. ``nonhuman``\nskips most of those (a dragon doesn't have ``hair_color``,\na ghost doesn't have ``bust``) and uses the freeform\n``physical_description`` field instead. This lets the\nstoryteller introduce robots, monsters, spirits, animals,\neldritch beings, and the like without forcing them into a\nperson-shaped schema and producing nonsense fields.",
+      "enum": [
+        "human",
+        "nonhuman"
+      ],
+      "title": "CharacterKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Full descriptor for a character introduced by a dialog beat.\n\nThe LLM emits this when a beat references a character ID that\ndoesn't yet exist on the stage. The handler turns each descriptor\ninto a full ``Character`` (assigning a seed) before applying the\nbeat, so ``entering_character_ids`` always resolves cleanly.\n\nThe schema mirrors ``Character`` \u2014 ``kind`` branches the\nrendering pipeline (``human`` \u2192 structured anatomy fields;\n``nonhuman`` \u2192 freeform ``physical_description`` with empty\nanatomy fields). All human-anatomy fields default to empty\nstring so the LLM can omit them on nonhuman entries; the\nportrait builder filters empties out so we don't emit stray\n``\" hair\"`` or ``\"thirty-year-old \"`` tags.",
+  "properties": {
+    "age": {
+      "default": 30,
+      "minimum": 0,
+      "title": "Age",
+      "type": "integer"
+    },
+    "build": {
+      "default": "",
+      "title": "Build",
+      "type": "string"
+    },
+    "bust": {
+      "default": "",
+      "title": "Bust",
+      "type": "string"
+    },
+    "decals": {
+      "default": "",
+      "title": "Decals",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "effects": {
+      "default": "",
+      "title": "Effects",
+      "type": "string"
+    },
+    "ethnicity": {
+      "default": "",
+      "title": "Ethnicity",
+      "type": "string"
+    },
+    "expression": {
+      "default": "neutral",
+      "title": "Expression",
+      "type": "string"
+    },
+    "eye_color": {
+      "default": "",
+      "title": "Eye Color",
+      "type": "string"
+    },
+    "gender": {
+      "default": "",
+      "title": "Gender",
+      "type": "string"
+    },
+    "hair_color": {
+      "default": "",
+      "title": "Hair Color",
+      "type": "string"
+    },
+    "hairstyle": {
+      "default": "",
+      "title": "Hairstyle",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/CharacterKind",
+      "default": "human"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "outfit": {
+      "default": "practical everyday clothing",
+      "title": "Outfit",
+      "type": "string"
+    },
+    "physical_description": {
+      "default": "",
+      "title": "Physical Description",
+      "type": "string"
+    },
+    "pose": {
+      "default": "standing",
+      "title": "Pose",
+      "type": "string"
+    },
+    "pronouns": {
+      "default": "",
+      "title": "Pronouns",
+      "type": "string"
+    },
+    "skin": {
+      "default": "",
+      "title": "Skin",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "description"
+  ],
+  "title": "NewCharacterDescriptor",
+  "type": "object"
+}

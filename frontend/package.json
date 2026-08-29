@@ -1,0 +1,98 @@
+{
+  "name": "lucidium-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Lucidium AI-driven visual novel engine — Electron renderer.",
+  "main": "dist-electron/main.js",
+  "//engines": [
+    "Node 22.12 is the floor for electron 43 and vite 8; jsdom 30 raises",
+    "it again to 22.22 / 24.15. CI pins node-version 24 to satisfy all",
+    "three. Building on Node 20 fails at install time."
+  ],
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run codegen && tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "codegen": "json2ts -i \"../shared-schemas/*.schema.json\" -o src/shared/generated && node scripts/gen-message-map.mjs"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@fontsource/bebas-neue": "^5.3.0",
+    "@fontsource/caveat": "^5.3.0",
+    "@fontsource/cinzel": "^5.3.0",
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/playfair-display": "^5.3.0",
+    "@fontsource/quicksand": "^5.3.0",
+    "@playwright/test": "^1.62.1",
+    "@testing-library/react": "^16.3.2",
+    "@eslint/js": "^9.39.5",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
+    "electron": "^43.3.0",
+    "electron-builder": "^26.15.3",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.9.0",
+    "jsdom": "^30.0.1",
+    "json-schema-to-typescript": "^15.0.4",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.66.0",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  },
+  "build": {
+    "appId": "com.lucidium.app",
+    "productName": "Lucidium",
+    "icon": "../icon.png",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend/dist/lucidium-backend",
+        "to": "lucidium-backend",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "win": {
+      "target": "7z",
+      "signAndEditExecutable": false
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.entertainment"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Game"
+    }
+  }
+}

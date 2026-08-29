@@ -1,0 +1,85 @@
+name: Bug report
+description: Something in the engine behaves incorrectly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a report.
+
+        **Do not use this form for security vulnerabilities** — see
+        [SECURITY.md](../blob/master/.github/SECURITY.md) and report privately.
+
+        **Do not paste generated explicit content here** — describe it, or
+        email the maintainer per [SAFETY.md](../blob/master/SAFETY.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start a new story with ...
+        2. Open Settings → ...
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the engine?
+      options:
+        - Frontend / Electron UI
+        - Backend / orchestration
+        - Image generation
+        - Voice / audio
+        - Save & load
+        - Packaging / first-run setup
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Lucidium version or commit
+      placeholder: "0.1.0, or the git SHA you built from"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS and version, GPU and driver (or CPU-only), Python and Node versions.
+      placeholder: |
+        OS: Windows 11 26200
+        GPU: RTX 4090, driver 566.36 (or: AMD RX 7900 XTX / CPU-only)
+        Python: 3.12.4    Node: 22.11.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Paste the error and surrounding lines. This is rendered as code — no backticks needed.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for a duplicate.
+          required: true
+        - label: This is not a security vulnerability or a content-safety bypass.
+          required: true

@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "image_max_in_flight": {
+      "default": 2,
+      "maximum": 64,
+      "minimum": 1,
+      "title": "Image Max In Flight",
+      "type": "integer"
+    },
+    "llm_max_in_flight": {
+      "default": 4,
+      "maximum": 64,
+      "minimum": 1,
+      "title": "Llm Max In Flight",
+      "type": "integer"
+    }
+  },
+  "title": "ConcurrencyLimits",
+  "type": "object"
+}

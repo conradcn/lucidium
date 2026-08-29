@@ -1,0 +1,1064 @@
+{
+  "$defs": {
+    "Character": {
+      "additionalProperties": false,
+      "properties": {
+        "age": {
+          "default": 30,
+          "minimum": 0,
+          "title": "Age",
+          "type": "integer"
+        },
+        "build": {
+          "default": "",
+          "title": "Build",
+          "type": "string"
+        },
+        "bust": {
+          "default": "",
+          "title": "Bust",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decals": {
+          "default": "",
+          "title": "Decals",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "effects": {
+          "default": "",
+          "title": "Effects",
+          "type": "string"
+        },
+        "ethnicity": {
+          "default": "",
+          "title": "Ethnicity",
+          "type": "string"
+        },
+        "expression": {
+          "default": "neutral",
+          "title": "Expression",
+          "type": "string"
+        },
+        "eye_color": {
+          "default": "",
+          "title": "Eye Color",
+          "type": "string"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/Fact"
+          },
+          "title": "Facts",
+          "type": "array"
+        },
+        "gender": {
+          "default": "",
+          "title": "Gender",
+          "type": "string"
+        },
+        "hair_color": {
+          "default": "",
+          "title": "Hair Color",
+          "type": "string"
+        },
+        "hairstyle": {
+          "default": "",
+          "title": "Hairstyle",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "images": {
+          "items": {
+            "$ref": "#/$defs/CharacterImage"
+          },
+          "title": "Images",
+          "type": "array"
+        },
+        "is_player": {
+          "default": false,
+          "title": "Is Player",
+          "type": "boolean"
+        },
+        "kind": {
+          "$ref": "#/$defs/CharacterKind",
+          "default": "human"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "outfit": {
+          "default": "practical everyday clothing",
+          "title": "Outfit",
+          "type": "string"
+        },
+        "physical_description": {
+          "default": "",
+          "title": "Physical Description",
+          "type": "string"
+        },
+        "pose": {
+          "default": "standing",
+          "title": "Pose",
+          "type": "string"
+        },
+        "pronouns": {
+          "default": "",
+          "title": "Pronouns",
+          "type": "string"
+        },
+        "removed": {
+          "default": false,
+          "title": "Removed",
+          "type": "boolean"
+        },
+        "removed_reason": {
+          "default": "",
+          "title": "Removed Reason",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 18446744073709551615,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "skin": {
+          "default": "",
+          "title": "Skin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "seed"
+      ],
+      "title": "Character",
+      "type": "object"
+    },
+    "CharacterAttributeField": {
+      "enum": [
+        "description",
+        "outfit",
+        "pose",
+        "expression",
+        "effects",
+        "decals",
+        "name",
+        "hair_color",
+        "hairstyle",
+        "eye_color",
+        "skin",
+        "build",
+        "bust",
+        "ethnicity",
+        "gender",
+        "kind",
+        "physical_description",
+        "pronouns"
+      ],
+      "title": "CharacterAttributeField",
+      "type": "string"
+    },
+    "CharacterChange": {
+      "additionalProperties": false,
+      "properties": {
+        "character_id": {
+          "title": "Character Id",
+          "type": "string"
+        },
+        "field": {
+          "$ref": "#/$defs/CharacterAttributeField"
+        },
+        "new_value": {
+          "title": "New Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "character_id",
+        "field",
+        "new_value"
+      ],
+      "title": "CharacterChange",
+      "type": "object"
+    },
+    "CharacterImage": {
+      "additionalProperties": false,
+      "properties": {
+        "attributes_snapshot": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Attributes Snapshot",
+          "type": "object"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "identity_hash": {
+          "default": "",
+          "title": "Identity Hash",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "prompt_hash": {
+          "title": "Prompt Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "prompt_hash",
+        "attributes_snapshot"
+      ],
+      "title": "CharacterImage",
+      "type": "object"
+    },
+    "CharacterKind": {
+      "description": "Branches the character generation pipeline.\n\n``human`` (default) flows through the existing structured\nanatomy fields \u2014 gender, ethnicity, hair, eye colour, build,\netc. \u2014 that map cleanly onto SDXL's portrait prior. ``nonhuman``\nskips most of those (a dragon doesn't have ``hair_color``,\na ghost doesn't have ``bust``) and uses the freeform\n``physical_description`` field instead. This lets the\nstoryteller introduce robots, monsters, spirits, animals,\neldritch beings, and the like without forcing them into a\nperson-shaped schema and producing nonsense fields.",
+      "enum": [
+        "human",
+        "nonhuman"
+      ],
+      "title": "CharacterKind",
+      "type": "string"
+    },
+    "CostTelemetry": {
+      "additionalProperties": false,
+      "properties": {
+        "dollar_estimate": {
+          "default": 0.0,
+          "title": "Dollar Estimate",
+          "type": "number"
+        },
+        "image_calls": {
+          "default": 0,
+          "title": "Image Calls",
+          "type": "integer"
+        },
+        "latency_ms_total": {
+          "default": 0,
+          "title": "Latency Ms Total",
+          "type": "integer"
+        },
+        "llm_calls": {
+          "default": 0,
+          "title": "Llm Calls",
+          "type": "integer"
+        },
+        "tokens_in": {
+          "default": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "default": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        }
+      },
+      "title": "CostTelemetry",
+      "type": "object"
+    },
+    "DialogNode": {
+      "additionalProperties": false,
+      "properties": {
+        "character_changes": {
+          "items": {
+            "$ref": "#/$defs/CharacterChange"
+          },
+          "title": "Character Changes",
+          "type": "array"
+        },
+        "chosen_option_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chosen Option Id"
+        },
+        "entering_character_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Entering Character Ids",
+          "type": "array"
+        },
+        "generation_metadata": {
+          "$ref": "#/$defs/GenerationMetadata"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "leaving_character_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Leaving Character Ids",
+          "type": "array"
+        },
+        "location_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location Id"
+        },
+        "location_lighting": {
+          "default": "",
+          "title": "Location Lighting",
+          "type": "string"
+        },
+        "location_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location Prompt"
+        },
+        "new_characters": {
+          "items": {
+            "$ref": "#/$defs/NewCharacterDescriptor"
+          },
+          "title": "New Characters",
+          "type": "array"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/DialogOption"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Id"
+        },
+        "premise_hash": {
+          "title": "Premise Hash",
+          "type": "string"
+        },
+        "speaker_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speaker Id"
+        },
+        "state": {
+          "$ref": "#/$defs/DialogNodeState",
+          "default": "speculative"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        }
+      },
+      "required": [
+        "premise_hash"
+      ],
+      "title": "DialogNode",
+      "type": "object"
+    },
+    "DialogNodeState": {
+      "enum": [
+        "speculative",
+        "pending_text",
+        "ready",
+        "committed",
+        "invalidated"
+      ],
+      "title": "DialogNodeState",
+      "type": "string"
+    },
+    "DialogOption": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "DialogOption",
+      "type": "object"
+    },
+    "DialogTree": {
+      "additionalProperties": false,
+      "properties": {
+        "committed_path": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Committed Path",
+          "type": "array"
+        },
+        "nodes": {
+          "additionalProperties": {
+            "$ref": "#/$defs/DialogNode"
+          },
+          "title": "Nodes",
+          "type": "object"
+        },
+        "root_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Root Id"
+        }
+      },
+      "title": "DialogTree",
+      "type": "object"
+    },
+    "DirectionSignal": {
+      "enum": [
+        "stay_focused",
+        "reintroduce_thread",
+        "none"
+      ],
+      "title": "DirectionSignal",
+      "type": "string"
+    },
+    "Environment": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "image_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Path"
+        },
+        "lighting": {
+          "default": "",
+          "title": "Lighting",
+          "type": "string"
+        },
+        "location_label": {
+          "title": "Location Label",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_hash": {
+          "title": "Prompt Hash",
+          "type": "string"
+        },
+        "seed": {
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "location_label",
+        "prompt",
+        "prompt_hash"
+      ],
+      "title": "Environment",
+      "type": "object"
+    },
+    "EvidenceQuote": {
+      "additionalProperties": false,
+      "properties": {
+        "source_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Node Id"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "EvidenceQuote",
+      "type": "object"
+    },
+    "Fact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/FactConfidence",
+          "default": "inferred"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "source_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Node Id"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Fact",
+      "type": "object"
+    },
+    "FactConfidence": {
+      "enum": [
+        "canon",
+        "inferred"
+      ],
+      "title": "FactConfidence",
+      "type": "string"
+    },
+    "GenerationMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "latency_ms": {
+          "default": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "prompt_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Hash"
+        },
+        "seed_parameters": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "title": "Seed Parameters",
+          "type": "object"
+        },
+        "tokens_in": {
+          "default": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "default": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        }
+      },
+      "title": "GenerationMetadata",
+      "type": "object"
+    },
+    "NewCharacterDescriptor": {
+      "additionalProperties": false,
+      "description": "Full descriptor for a character introduced by a dialog beat.\n\nThe LLM emits this when a beat references a character ID that\ndoesn't yet exist on the stage. The handler turns each descriptor\ninto a full ``Character`` (assigning a seed) before applying the\nbeat, so ``entering_character_ids`` always resolves cleanly.\n\nThe schema mirrors ``Character`` \u2014 ``kind`` branches the\nrendering pipeline (``human`` \u2192 structured anatomy fields;\n``nonhuman`` \u2192 freeform ``physical_description`` with empty\nanatomy fields). All human-anatomy fields default to empty\nstring so the LLM can omit them on nonhuman entries; the\nportrait builder filters empties out so we don't emit stray\n``\" hair\"`` or ``\"thirty-year-old \"`` tags.",
+      "properties": {
+        "age": {
+          "default": 30,
+          "minimum": 0,
+          "title": "Age",
+          "type": "integer"
+        },
+        "build": {
+          "default": "",
+          "title": "Build",
+          "type": "string"
+        },
+        "bust": {
+          "default": "",
+          "title": "Bust",
+          "type": "string"
+        },
+        "decals": {
+          "default": "",
+          "title": "Decals",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "effects": {
+          "default": "",
+          "title": "Effects",
+          "type": "string"
+        },
+        "ethnicity": {
+          "default": "",
+          "title": "Ethnicity",
+          "type": "string"
+        },
+        "expression": {
+          "default": "neutral",
+          "title": "Expression",
+          "type": "string"
+        },
+        "eye_color": {
+          "default": "",
+          "title": "Eye Color",
+          "type": "string"
+        },
+        "gender": {
+          "default": "",
+          "title": "Gender",
+          "type": "string"
+        },
+        "hair_color": {
+          "default": "",
+          "title": "Hair Color",
+          "type": "string"
+        },
+        "hairstyle": {
+          "default": "",
+          "title": "Hairstyle",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/CharacterKind",
+          "default": "human"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "outfit": {
+          "default": "practical everyday clothing",
+          "title": "Outfit",
+          "type": "string"
+        },
+        "physical_description": {
+          "default": "",
+          "title": "Physical Description",
+          "type": "string"
+        },
+        "pose": {
+          "default": "standing",
+          "title": "Pose",
+          "type": "string"
+        },
+        "pronouns": {
+          "default": "",
+          "title": "Pronouns",
+          "type": "string"
+        },
+        "skin": {
+          "default": "",
+          "title": "Skin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ],
+      "title": "NewCharacterDescriptor",
+      "type": "object"
+    },
+    "PacePreference": {
+      "enum": [
+        "faster",
+        "same",
+        "slower"
+      ],
+      "title": "PacePreference",
+      "type": "string"
+    },
+    "PlayerIntentForecast": {
+      "additionalProperties": false,
+      "properties": {
+        "direction_signal": {
+          "$ref": "#/$defs/DirectionSignal",
+          "default": "none"
+        },
+        "pace_preference": {
+          "$ref": "#/$defs/PacePreference",
+          "default": "same"
+        },
+        "tone_preference": {
+          "$ref": "#/$defs/TonePreference",
+          "default": "unspecified"
+        },
+        "weighted_evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceQuote"
+          },
+          "title": "Weighted Evidence",
+          "type": "array"
+        }
+      },
+      "title": "PlayerIntentForecast",
+      "type": "object"
+    },
+    "PlotStage": {
+      "additionalProperties": false,
+      "description": "One stage of the broad plot arc set up at world init.\n\nThe full ``plot_outline`` (a list of these) is the LLM's\nlong-form plan for the game \u2014 set up at world_init, only\nrevised by the summarizer when the actual story has drifted\nenough that the plan no longer fits. The storyteller never\nsees the full outline; the summarizer pulls the currently-\nactive stage and feeds that one slice to text_gen.\n\nWhy this matters: passing the full multi-stage outline to the\nstoryteller every turn floods it with future-stage spoilers,\ncausing it to dump beats from late stages into the current\nscene. The slice contract keeps the storyteller focused on\n\"what should happen RIGHT NOW\" while the summarizer holds the\nmap of where we are in the longer arc.",
+      "properties": {
+        "goal": {
+          "title": "Goal",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "goal",
+        "summary"
+      ],
+      "title": "PlotStage",
+      "type": "object"
+    },
+    "PlotThread": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "last_referenced_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Referenced Node Id"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "summary"
+      ],
+      "title": "PlotThread",
+      "type": "object"
+    },
+    "TonePreference": {
+      "enum": [
+        "focus",
+        "chaos",
+        "unspecified"
+      ],
+      "title": "TonePreference",
+      "type": "string"
+    },
+    "WorldState": {
+      "additionalProperties": false,
+      "properties": {
+        "active_plot_threads": {
+          "items": {
+            "$ref": "#/$defs/PlotThread"
+          },
+          "title": "Active Plot Threads",
+          "type": "array"
+        },
+        "current_stage_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Stage Id"
+        },
+        "dropped_plot_threads": {
+          "items": {
+            "$ref": "#/$defs/PlotThread"
+          },
+          "title": "Dropped Plot Threads",
+          "type": "array"
+        },
+        "game_name": {
+          "title": "Game Name",
+          "type": "string"
+        },
+        "genre": {
+          "title": "Genre",
+          "type": "string"
+        },
+        "music_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Music Path"
+        },
+        "music_prompt": {
+          "default": "",
+          "title": "Music Prompt",
+          "type": "string"
+        },
+        "music_prompt_hash": {
+          "default": "",
+          "title": "Music Prompt Hash",
+          "type": "string"
+        },
+        "overall_plot_direction": {
+          "default": "",
+          "title": "Overall Plot Direction",
+          "type": "string"
+        },
+        "player_intent": {
+          "$ref": "#/$defs/PlayerIntentForecast"
+        },
+        "plot_outline": {
+          "items": {
+            "$ref": "#/$defs/PlotStage"
+          },
+          "title": "Plot Outline",
+          "type": "array"
+        },
+        "prompt_history_clamp_chars": {
+          "default": 12000,
+          "title": "Prompt History Clamp Chars",
+          "type": "integer"
+        },
+        "setting": {
+          "title": "Setting",
+          "type": "string"
+        },
+        "summarizer_assessment": {
+          "default": "",
+          "title": "Summarizer Assessment",
+          "type": "string"
+        },
+        "visual_style": {
+          "title": "Visual Style",
+          "type": "string"
+        }
+      },
+      "required": [
+        "game_name",
+        "setting",
+        "genre",
+        "visual_style"
+      ],
+      "title": "WorldState",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "characters": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Character"
+      },
+      "title": "Characters",
+      "type": "object"
+    },
+    "cost_telemetry": {
+      "$ref": "#/$defs/CostTelemetry"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "current_node_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Current Node Id"
+    },
+    "dialog_tree": {
+      "$ref": "#/$defs/DialogTree"
+    },
+    "environments": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Environment"
+      },
+      "title": "Environments",
+      "type": "object"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "on_stage": {
+      "items": {
+        "type": "string"
+      },
+      "title": "On Stage",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "world": {
+      "$ref": "#/$defs/WorldState"
+    }
+  },
+  "required": [
+    "world"
+  ],
+  "title": "Game",
+  "type": "object"
+}

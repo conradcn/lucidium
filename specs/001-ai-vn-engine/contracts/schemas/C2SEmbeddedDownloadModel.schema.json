@@ -1,0 +1,18 @@
+{
+  "additionalProperties": false,
+  "description": "One-click download of a base checkpoint into the embedded models\ndirectory. ``key`` selects a ``MODEL_CATALOG`` entry (``sdxl`` /\n``sdxl-turbo`` / ``z-image-turbo`` / ``qwen-image``); empty means \"use\nthe hardware-recommended one\". Streams ``s2c/embedded/download_progress``\nwhile running, then a terminal ``s2c/embedded/models`` with the\nrefreshed inventory so the dropdown updates in place.",
+  "properties": {
+    "key": {
+      "default": "",
+      "title": "Key",
+      "type": "string"
+    },
+    "models_dir": {
+      "default": "",
+      "title": "Models Dir",
+      "type": "string"
+    }
+  },
+  "title": "C2SEmbeddedDownloadModel",
+  "type": "object"
+}

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/conradcn/lucidium/security/advisories/new
+    about: Report privately via a security advisory — never in a public issue.
+  - name: Content-safety report (safeguard bypass, filter false negative)
+    url: https://github.com/conradcn/lucidium/blob/master/SAFETY.md
+    about: Follow the reporting section of SAFETY.md; email for sensitive cases.

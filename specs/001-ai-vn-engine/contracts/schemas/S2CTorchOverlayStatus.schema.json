@@ -1,0 +1,44 @@
+{
+  "additionalProperties": false,
+  "description": "Snapshot of the torch runtime overlay state.\n\nSent in reply to ``c2s/torch_overlay/status`` AND as the terminal\nsuccess message after a ``c2s/torch_overlay/install`` so the UI can\nrefresh its \"installed / active\" state from one shape.\n\n``recommended`` is the flavor the GPU probe suggests for this\nmachine; ``installed`` lists the flavors with an overlay on disk;\n``active`` is the flavor the entry shim will load on next launch\n(``None`` on a fresh install before any flavor is activated).\n``runtime_dir`` is the resolved overlay root for diagnostics /\ntooltips. ``activated`` is set on the post-install reply to tell the\nUI whether a relaunch is needed to pick up the new flavor.",
+  "properties": {
+    "activated": {
+      "default": false,
+      "title": "Activated",
+      "type": "boolean"
+    },
+    "active": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Active"
+    },
+    "installed": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Installed",
+      "type": "array"
+    },
+    "recommended": {
+      "title": "Recommended",
+      "type": "string"
+    },
+    "runtime_dir": {
+      "default": "",
+      "title": "Runtime Dir",
+      "type": "string"
+    }
+  },
+  "required": [
+    "recommended"
+  ],
+  "title": "S2CTorchOverlayStatus",
+  "type": "object"
+}

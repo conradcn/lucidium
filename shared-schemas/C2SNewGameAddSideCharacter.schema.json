@@ -1,0 +1,14 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "title": "Description",
+      "type": "string"
+    }
+  },
+  "required": [
+    "description"
+  ],
+  "title": "C2SNewGameAddSideCharacter",
+  "type": "object"
+}

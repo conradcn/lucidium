@@ -1,0 +1,20 @@
+{
+  "additionalProperties": false,
+  "description": "Download + install (and by default activate) a torch runtime\noverlay flavor. The frozen build ships WITHOUT torch; this is how\nthe player fetches the GPU-correct build (CUDA / ROCm / DirectML /\nXPU / CPU) after the GPU probe. Mirrors the SDXL \"Download\" button:\na deliberate user click triggers a multi-hundred-MB fetch, streamed\nback as ``s2c/torch_overlay/progress`` events and terminated by a\nfinal ``s2c/torch_overlay/status`` (success) or ``s2c/error``.\n\n``flavor`` must be one of ``cuda`` / ``rocm`` / ``directml`` /\n``xpu`` / ``cpu``. ``activate`` (default true) flips the\nactive-overlay pointer so the NEXT launch loads this flavor \u2014 the\nswitch can't take effect in the running process because torch is\nalready imported.",
+  "properties": {
+    "activate": {
+      "default": true,
+      "title": "Activate",
+      "type": "boolean"
+    },
+    "flavor": {
+      "title": "Flavor",
+      "type": "string"
+    }
+  },
+  "required": [
+    "flavor"
+  ],
+  "title": "C2STorchOverlayInstall",
+  "type": "object"
+}

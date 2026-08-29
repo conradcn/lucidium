@@ -1,0 +1,91 @@
+{
+  "$defs": {
+    "MessageType": {
+      "enum": [
+        "c2s/hello",
+        "c2s/saves/list",
+        "c2s/saves/continue",
+        "c2s/saves/load",
+        "c2s/saves/rename",
+        "c2s/saves/delete",
+        "c2s/new_game/start",
+        "c2s/new_game/answer",
+        "c2s/new_game/add_side_character",
+        "c2s/new_game/edit_side_character",
+        "c2s/new_game/delete_side_character",
+        "c2s/new_game/edit_review",
+        "c2s/new_game/confirm",
+        "c2s/new_game/go_back",
+        "c2s/new_game/surprise_me",
+        "c2s/play/advance",
+        "c2s/play/free_text",
+        "c2s/play/undo",
+        "c2s/play/cancel",
+        "c2s/edit/world",
+        "c2s/edit/character",
+        "c2s/edit/character/dismiss",
+        "c2s/edit/character/show",
+        "c2s/edit/character/rerender",
+        "c2s/edit/history",
+        "c2s/edit/history/delete",
+        "c2s/edit/history/retcon",
+        "c2s/edit/environment",
+        "c2s/edit/environment/rerender",
+        "c2s/edit/environment/apply",
+        "c2s/settings/get",
+        "c2s/settings/update",
+        "c2s/settings/validate_api_key",
+        "c2s/embedded/list_models",
+        "c2s/embedded/recommend_model",
+        "c2s/embedded/download_model",
+        "c2s/torch_overlay/status",
+        "c2s/torch_overlay/install",
+        "c2s/music/inventory",
+        "c2s/music/regenerate",
+        "c2s/app/exit",
+        "s2c/hello",
+        "s2c/saves/list",
+        "s2c/state/full",
+        "s2c/state/patch",
+        "s2c/text/streaming",
+        "s2c/text/complete",
+        "s2c/image/ready",
+        "s2c/music/ready",
+        "s2c/error",
+        "s2c/notice",
+        "s2c/cost",
+        "s2c/embedded/models",
+        "s2c/embedded/recommended_model",
+        "s2c/embedded/download_progress",
+        "s2c/settings/api_key_validation",
+        "s2c/torch_overlay/status",
+        "s2c/torch_overlay/progress",
+        "s2c/music/inventory",
+        "s2c/play/cancelled"
+      ],
+      "title": "MessageType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "protocol_version": {
+      "default": 1,
+      "title": "Protocol Version",
+      "type": "integer"
+    },
+    "type": {
+      "$ref": "#/$defs/MessageType"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "title": "Envelope",
+  "type": "object"
+}

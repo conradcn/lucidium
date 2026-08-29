@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "Remove a side-character stub the player previously added.",
+  "properties": {
+    "character_id": {
+      "title": "Character Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "character_id"
+  ],
+  "title": "C2SNewGameDeleteSideCharacter",
+  "type": "object"
+}

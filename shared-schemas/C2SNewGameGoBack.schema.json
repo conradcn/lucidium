@@ -1,0 +1,7 @@
+{
+  "additionalProperties": false,
+  "description": "Step the interview one screen backwards. Sent from the Review\nscreen's ``Go back`` button so the player can return to the Name\nstep (the previous question) without losing their answers \u2014 every\nanswered field stays in ``session.interview`` and the step pointer\nis the only thing that moves.\n\nCancels the in-flight world_init prefetch (which was launched\nagainst the answers we're now letting the player change). The\nnext time the player completes Name and lands on Review, a fresh\nprefetch fires automatically.",
+  "properties": {},
+  "title": "C2SNewGameGoBack",
+  "type": "object"
+}

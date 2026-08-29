@@ -1,0 +1,13 @@
+{
+  "additionalProperties": false,
+  "description": "Re-render the live game's background music. Supplying\n``prompt`` overrides ``World.music_prompt`` for this render and\nupdates the stored prompt; an empty string keeps the current\nprompt and just re-fires the pipeline (useful when a render\nfailed silently and the player wants to retry). Requires\n``MusicSettings.enabled=True``; the handler raises a schema\nerror if music gen is disabled.",
+  "properties": {
+    "prompt": {
+      "default": "",
+      "title": "Prompt",
+      "type": "string"
+    }
+  },
+  "title": "C2SMusicRegenerate",
+  "type": "object"
+}

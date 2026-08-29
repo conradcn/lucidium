@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "ImageBackend": {
+      "description": "Where image generation runs.\n\n``embedded`` (the default, see ``ImageSettings.backend``) runs\ndiffusers + an SDXL-family checkpoint inside the engine\nprocess; no external server is involved. ``comfyui`` instead\nspeaks the ComfyUI HTTP API at ``ImageSettings.base_url`` \u2014\nthe player runs ComfyUI as a separate process, possibly on\nanother machine. For the embedded backend the checkpoint is\nloaded from\n``ImageSettings.embedded_models_dir`` and the player picks\nwhich file to use via ``embedded_model_name``.",
+      "enum": [
+        "comfyui",
+        "embedded"
+      ],
+      "title": "ImageBackend",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "auto_gpu_provision": {
+      "default": true,
+      "title": "Auto Gpu Provision",
+      "type": "boolean"
+    },
+    "backend": {
+      "$ref": "#/$defs/ImageBackend",
+      "default": "embedded"
+    },
+    "background_workflow": {
+      "default": "background.workflow.json",
+      "title": "Background Workflow",
+      "type": "string"
+    },
+    "base_url": {
+      "default": "http://127.0.0.1:8000",
+      "title": "Base Url",
+      "type": "string"
+    },
+    "embedded_character_model_name": {
+      "default": "",
+      "title": "Embedded Character Model Name",
+      "type": "string"
+    },
+    "embedded_environment_model_name": {
+      "default": "",
+      "title": "Embedded Environment Model Name",
+      "type": "string"
+    },
+    "embedded_face_detail": {
+      "default": false,
+      "title": "Embedded Face Detail",
+      "type": "boolean"
+    },
+    "embedded_model_name": {
+      "default": "",
+      "title": "Embedded Model Name",
+      "type": "string"
+    },
+    "embedded_models_dir": {
+      "default": "",
+      "title": "Embedded Models Dir",
+      "type": "string"
+    },
+    "portrait_workflow": {
+      "default": "portrait.workflow.json",
+      "title": "Portrait Workflow",
+      "type": "string"
+    },
+    "torch_download_stall_timeout_s": {
+      "default": 120.0,
+      "title": "Torch Download Stall Timeout S",
+      "type": "number"
+    }
+  },
+  "title": "ImageSettings",
+  "type": "object"
+}

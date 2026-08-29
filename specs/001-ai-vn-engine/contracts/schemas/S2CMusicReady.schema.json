@@ -1,0 +1,25 @@
+{
+  "additionalProperties": false,
+  "description": "A new background-music track is ready for playback. The\nrenderer's BackgroundMusic component swaps to ``audio_path``\non receipt; the prior track fades out, the new one fades in.\n``music_id`` is the prompt hash so the renderer can dedup\nduplicate ready events without re-trigger-fading the same\ntrack.",
+  "properties": {
+    "audio_path": {
+      "title": "Audio Path",
+      "type": "string"
+    },
+    "music_id": {
+      "title": "Music Id",
+      "type": "string"
+    },
+    "prompt": {
+      "title": "Prompt",
+      "type": "string"
+    }
+  },
+  "required": [
+    "audio_path",
+    "music_id",
+    "prompt"
+  ],
+  "title": "S2CMusicReady",
+  "type": "object"
+}

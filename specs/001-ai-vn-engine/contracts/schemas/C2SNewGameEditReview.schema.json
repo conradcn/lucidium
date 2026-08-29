@@ -1,0 +1,20 @@
+{
+  "additionalProperties": false,
+  "description": "Edit a previously-answered interview field from the Review\nstep. Updates the named field in-place AND cancels + re-fires\nthe world_init prefetch so the (now-corrected) values feed\nthe next ``new_game/confirm`` call.\n\n``field`` must be one of the answered-step keys: ``setting``,\n``visual_style``, ``genre``, ``character_description``,\n``character_name``. The handler rejects anything else so a\nstray patch can't write arbitrary fields into the interview\nstate.",
+  "properties": {
+    "field": {
+      "title": "Field",
+      "type": "string"
+    },
+    "value": {
+      "title": "Value",
+      "type": "string"
+    }
+  },
+  "required": [
+    "field",
+    "value"
+  ],
+  "title": "C2SNewGameEditReview",
+  "type": "object"
+}

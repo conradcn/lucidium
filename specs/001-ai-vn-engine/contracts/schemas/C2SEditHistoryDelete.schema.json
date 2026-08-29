@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "Delete a single committed beat from the history. The chain\nsplices: the deleted node is removed from ``committed_path`` and\nits successor's ``parent_id`` is rewritten to point at the\ndeleted node's parent. Speculative descendants of the deleted\nnode (and of beats after it on the live path) are invalidated.",
+  "properties": {
+    "node_id": {
+      "title": "Node Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "node_id"
+  ],
+  "title": "C2SEditHistoryDelete",
+  "type": "object"
+}

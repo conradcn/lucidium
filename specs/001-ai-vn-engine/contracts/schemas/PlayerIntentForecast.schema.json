@@ -1,0 +1,81 @@
+{
+  "$defs": {
+    "DirectionSignal": {
+      "enum": [
+        "stay_focused",
+        "reintroduce_thread",
+        "none"
+      ],
+      "title": "DirectionSignal",
+      "type": "string"
+    },
+    "EvidenceQuote": {
+      "additionalProperties": false,
+      "properties": {
+        "source_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Node Id"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "EvidenceQuote",
+      "type": "object"
+    },
+    "PacePreference": {
+      "enum": [
+        "faster",
+        "same",
+        "slower"
+      ],
+      "title": "PacePreference",
+      "type": "string"
+    },
+    "TonePreference": {
+      "enum": [
+        "focus",
+        "chaos",
+        "unspecified"
+      ],
+      "title": "TonePreference",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "direction_signal": {
+      "$ref": "#/$defs/DirectionSignal",
+      "default": "none"
+    },
+    "pace_preference": {
+      "$ref": "#/$defs/PacePreference",
+      "default": "same"
+    },
+    "tone_preference": {
+      "$ref": "#/$defs/TonePreference",
+      "default": "unspecified"
+    },
+    "weighted_evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceQuote"
+      },
+      "title": "Weighted Evidence",
+      "type": "array"
+    }
+  },
+  "title": "PlayerIntentForecast",
+  "type": "object"
+}

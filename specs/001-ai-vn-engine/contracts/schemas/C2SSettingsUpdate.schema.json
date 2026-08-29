@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "patch": {
+      "additionalProperties": true,
+      "title": "Patch",
+      "type": "object"
+    }
+  },
+  "required": [
+    "patch"
+  ],
+  "title": "C2SSettingsUpdate",
+  "type": "object"
+}

@@ -1,0 +1,14 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "protocol_version": {
+      "title": "Protocol Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "protocol_version"
+  ],
+  "title": "C2SHello",
+  "type": "object"
+}

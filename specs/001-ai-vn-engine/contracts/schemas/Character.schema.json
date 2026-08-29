@@ -1,0 +1,243 @@
+{
+  "$defs": {
+    "CharacterImage": {
+      "additionalProperties": false,
+      "properties": {
+        "attributes_snapshot": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Attributes Snapshot",
+          "type": "object"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "identity_hash": {
+          "default": "",
+          "title": "Identity Hash",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "prompt_hash": {
+          "title": "Prompt Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "prompt_hash",
+        "attributes_snapshot"
+      ],
+      "title": "CharacterImage",
+      "type": "object"
+    },
+    "CharacterKind": {
+      "description": "Branches the character generation pipeline.\n\n``human`` (default) flows through the existing structured\nanatomy fields \u2014 gender, ethnicity, hair, eye colour, build,\netc. \u2014 that map cleanly onto SDXL's portrait prior. ``nonhuman``\nskips most of those (a dragon doesn't have ``hair_color``,\na ghost doesn't have ``bust``) and uses the freeform\n``physical_description`` field instead. This lets the\nstoryteller introduce robots, monsters, spirits, animals,\neldritch beings, and the like without forcing them into a\nperson-shaped schema and producing nonsense fields.",
+      "enum": [
+        "human",
+        "nonhuman"
+      ],
+      "title": "CharacterKind",
+      "type": "string"
+    },
+    "Fact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/FactConfidence",
+          "default": "inferred"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "source_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Node Id"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Fact",
+      "type": "object"
+    },
+    "FactConfidence": {
+      "enum": [
+        "canon",
+        "inferred"
+      ],
+      "title": "FactConfidence",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "age": {
+      "default": 30,
+      "minimum": 0,
+      "title": "Age",
+      "type": "integer"
+    },
+    "build": {
+      "default": "",
+      "title": "Build",
+      "type": "string"
+    },
+    "bust": {
+      "default": "",
+      "title": "Bust",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decals": {
+      "default": "",
+      "title": "Decals",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "effects": {
+      "default": "",
+      "title": "Effects",
+      "type": "string"
+    },
+    "ethnicity": {
+      "default": "",
+      "title": "Ethnicity",
+      "type": "string"
+    },
+    "expression": {
+      "default": "neutral",
+      "title": "Expression",
+      "type": "string"
+    },
+    "eye_color": {
+      "default": "",
+      "title": "Eye Color",
+      "type": "string"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/Fact"
+      },
+      "title": "Facts",
+      "type": "array"
+    },
+    "gender": {
+      "default": "",
+      "title": "Gender",
+      "type": "string"
+    },
+    "hair_color": {
+      "default": "",
+      "title": "Hair Color",
+      "type": "string"
+    },
+    "hairstyle": {
+      "default": "",
+      "title": "Hairstyle",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "images": {
+      "items": {
+        "$ref": "#/$defs/CharacterImage"
+      },
+      "title": "Images",
+      "type": "array"
+    },
+    "is_player": {
+      "default": false,
+      "title": "Is Player",
+      "type": "boolean"
+    },
+    "kind": {
+      "$ref": "#/$defs/CharacterKind",
+      "default": "human"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "outfit": {
+      "default": "practical everyday clothing",
+      "title": "Outfit",
+      "type": "string"
+    },
+    "physical_description": {
+      "default": "",
+      "title": "Physical Description",
+      "type": "string"
+    },
+    "pose": {
+      "default": "standing",
+      "title": "Pose",
+      "type": "string"
+    },
+    "pronouns": {
+      "default": "",
+      "title": "Pronouns",
+      "type": "string"
+    },
+    "removed": {
+      "default": false,
+      "title": "Removed",
+      "type": "boolean"
+    },
+    "removed_reason": {
+      "default": "",
+      "title": "Removed Reason",
+      "type": "string"
+    },
+    "seed": {
+      "maximum": 18446744073709551615,
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "skin": {
+      "default": "",
+      "title": "Skin",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "seed"
+  ],
+  "title": "Character",
+  "type": "object"
+}

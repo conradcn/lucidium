@@ -1,0 +1,38 @@
+{
+  "$defs": {
+    "ErrorCode": {
+      "enum": [
+        "schema_error",
+        "provider_unreachable",
+        "provider_validation",
+        "provider_credits",
+        "not_found",
+        "internal",
+        "ws_disconnected"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "code": {
+      "$ref": "#/$defs/ErrorCode"
+    },
+    "message": {
+      "title": "Message",
+      "type": "string"
+    },
+    "recoverable": {
+      "default": true,
+      "title": "Recoverable",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "code",
+    "message"
+  ],
+  "title": "S2CError",
+  "type": "object"
+}

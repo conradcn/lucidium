@@ -1,0 +1,347 @@
+{
+  "$defs": {
+    "AudioSettings": {
+      "additionalProperties": false,
+      "description": "Global audio mixing controls. Applied renderer-side to\nevery audio element the engine drives (background music,\nmain-menu theme, future ambient / SFX layers). The renderer\nmultiplies ``master_volume`` and the per-channel volume into\nthe underlying ``HTMLAudioElement.volume`` \u2014 so a\n``master_volume`` of 0 silences everything regardless of the\nper-channel sliders, and each channel's slider only affects\nthat channel.\n\nAll sliders are 0..1 floats so the UI can map them straight\nto a percent without rescaling. Defaults are quiet enough\nthat music doesn't fight the storyteller's prose on first\nlaunch \u2014 players who want it louder bump the slider rather\nthan us shipping a default that masks dialogue.",
+      "properties": {
+        "master_volume": {
+          "default": 0.7,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Master Volume",
+          "type": "number"
+        },
+        "music_volume": {
+          "default": 0.4,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Music Volume",
+          "type": "number"
+        }
+      },
+      "title": "AudioSettings",
+      "type": "object"
+    },
+    "ConcurrencyLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "image_max_in_flight": {
+          "default": 2,
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Image Max In Flight",
+          "type": "integer"
+        },
+        "llm_max_in_flight": {
+          "default": 4,
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Llm Max In Flight",
+          "type": "integer"
+        }
+      },
+      "title": "ConcurrencyLimits",
+      "type": "object"
+    },
+    "ImageBackend": {
+      "description": "Where image generation runs.\n\n``embedded`` (the default, see ``ImageSettings.backend``) runs\ndiffusers + an SDXL-family checkpoint inside the engine\nprocess; no external server is involved. ``comfyui`` instead\nspeaks the ComfyUI HTTP API at ``ImageSettings.base_url`` \u2014\nthe player runs ComfyUI as a separate process, possibly on\nanother machine. For the embedded backend the checkpoint is\nloaded from\n``ImageSettings.embedded_models_dir`` and the player picks\nwhich file to use via ``embedded_model_name``.",
+      "enum": [
+        "comfyui",
+        "embedded"
+      ],
+      "title": "ImageBackend",
+      "type": "string"
+    },
+    "ImageSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "auto_gpu_provision": {
+          "default": true,
+          "title": "Auto Gpu Provision",
+          "type": "boolean"
+        },
+        "backend": {
+          "$ref": "#/$defs/ImageBackend",
+          "default": "embedded"
+        },
+        "background_workflow": {
+          "default": "background.workflow.json",
+          "title": "Background Workflow",
+          "type": "string"
+        },
+        "base_url": {
+          "default": "http://127.0.0.1:8000",
+          "title": "Base Url",
+          "type": "string"
+        },
+        "embedded_character_model_name": {
+          "default": "",
+          "title": "Embedded Character Model Name",
+          "type": "string"
+        },
+        "embedded_environment_model_name": {
+          "default": "",
+          "title": "Embedded Environment Model Name",
+          "type": "string"
+        },
+        "embedded_face_detail": {
+          "default": false,
+          "title": "Embedded Face Detail",
+          "type": "boolean"
+        },
+        "embedded_model_name": {
+          "default": "",
+          "title": "Embedded Model Name",
+          "type": "string"
+        },
+        "embedded_models_dir": {
+          "default": "",
+          "title": "Embedded Models Dir",
+          "type": "string"
+        },
+        "portrait_workflow": {
+          "default": "portrait.workflow.json",
+          "title": "Portrait Workflow",
+          "type": "string"
+        },
+        "torch_download_stall_timeout_s": {
+          "default": 120.0,
+          "title": "Torch Download Stall Timeout S",
+          "type": "number"
+        }
+      },
+      "title": "ImageSettings",
+      "type": "object"
+    },
+    "LlmSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "api_key": {
+          "default": "",
+          "format": "password",
+          "title": "Api Key",
+          "type": "string",
+          "writeOnly": true
+        },
+        "base_url": {
+          "default": "https://openrouter.ai/api/v1",
+          "title": "Base Url",
+          "type": "string"
+        },
+        "max_tokens": {
+          "default": 1024,
+          "title": "Max Tokens",
+          "type": "integer"
+        },
+        "model": {
+          "default": "deepseek/deepseek-v3.2-exp",
+          "title": "Model",
+          "type": "string"
+        },
+        "temperature": {
+          "default": 0.8,
+          "title": "Temperature",
+          "type": "number"
+        }
+      },
+      "title": "LlmSettings",
+      "type": "object"
+    },
+    "MusicSettings": {
+      "additionalProperties": false,
+      "description": "ACE-Step background-music generation settings.\n\nThe engine talks to a configurable ACE-Step server (HTTP) \u2014\ntypically the official Gradio-served instance the user runs\nlocally on port 7860. When ``enabled``, every NEW GAME (any\npath: New Game, Surprise Me, save load that produces a fresh\ntrack) generates an instrumental looping background track\nusing a prompt the world_init LLM emits. Mid-game music\nchanges are also supported via the storyteller's beat schema\n(``music_change`` field).\n\nAll fields are advisory \u2014 the actual ACE-Step pipeline\ndecides what they map to. Keeping the request shape generic\nlets the player run any compatible inference server (the\nofficial Gradio app, a custom shim, a hosted endpoint).",
+      "properties": {
+        "base_url": {
+          "default": "http://127.0.0.1:8001",
+          "title": "Base Url",
+          "type": "string"
+        },
+        "clip_seconds": {
+          "default": 60.0,
+          "maximum": 240.0,
+          "minimum": 15.0,
+          "title": "Clip Seconds",
+          "type": "number"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "guidance_scale": {
+          "default": 15.0,
+          "maximum": 30.0,
+          "minimum": 1.0,
+          "title": "Guidance Scale",
+          "type": "number"
+        },
+        "inference_steps": {
+          "default": 27,
+          "maximum": 100,
+          "minimum": 10,
+          "title": "Inference Steps",
+          "type": "integer"
+        },
+        "local_gpu_coordination": {
+          "default": true,
+          "title": "Local Gpu Coordination",
+          "type": "boolean"
+        },
+        "model_name": {
+          "default": "acestep-v15-turbo",
+          "title": "Model Name",
+          "type": "string"
+        }
+      },
+      "title": "MusicSettings",
+      "type": "object"
+    },
+    "UserProfile": {
+      "additionalProperties": false,
+      "description": "Cross-save persistent profile of the player's tastes.\n\nLives on ``Settings`` (not per-save) so a player who starts a\nnew game keeps the preferences they've expressed across past\nsessions. Two parallel sets of buckets, separated by PROVENANCE\nrather than by who is allowed to edit them:\n\n  * ``likes`` / ``dislikes`` / ``notes`` \u2014 originated from the\n    PLAYER through the Settings screen.\n  * ``summarizer_likes`` / ``summarizer_dislikes`` /\n    ``summarizer_notes`` \u2014 inferred by the summarizer LLM from\n    the player's actions across past sessions.\n\nBoth buckets are editable by both parties:\n\n  * The player can add / edit / delete entries in EITHER bucket\n    through the Settings screen \u2014 including pruning summarizer\n    inferences that don't actually match their tastes.\n  * The summarizer writes new inferences into the\n    ``summarizer_*`` bucket (its own provenance) and runs the\n    consolidation pass on it when any bucket hits 10 entries.\n    Player-bucket entries pass through summarizer writes\n    untouched (the summarizer doesn't add to that bucket \u2014 only\n    the player does \u2014 but it can read from it for dedup).\n\nBoth halves feed every storyteller / summarizer prompt \u2014 the LLM\nsees a deduplicated combined list so its inferences don't repeat\nsomething already in either bucket.",
+      "properties": {
+        "dislikes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dislikes",
+          "type": "array"
+        },
+        "dismissed_dislikes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dismissed Dislikes",
+          "type": "array"
+        },
+        "dismissed_likes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dismissed Likes",
+          "type": "array"
+        },
+        "dismissed_notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dismissed Notes",
+          "type": "array"
+        },
+        "likes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Likes",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "summarizer_dislikes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Summarizer Dislikes",
+          "type": "array"
+        },
+        "summarizer_dislikes_scores": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Summarizer Dislikes Scores",
+          "type": "object"
+        },
+        "summarizer_likes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Summarizer Likes",
+          "type": "array"
+        },
+        "summarizer_likes_scores": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Summarizer Likes Scores",
+          "type": "object"
+        },
+        "summarizer_notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Summarizer Notes",
+          "type": "array"
+        },
+        "summarizer_notes_scores": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Summarizer Notes Scores",
+          "type": "object"
+        }
+      },
+      "title": "UserProfile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "audio": {
+      "$ref": "#/$defs/AudioSettings"
+    },
+    "concurrency": {
+      "$ref": "#/$defs/ConcurrencyLimits"
+    },
+    "first_time_setup_complete": {
+      "default": false,
+      "title": "First Time Setup Complete",
+      "type": "boolean"
+    },
+    "image": {
+      "$ref": "#/$defs/ImageSettings"
+    },
+    "learn_user_profile": {
+      "default": true,
+      "title": "Learn User Profile",
+      "type": "boolean"
+    },
+    "llm": {
+      "$ref": "#/$defs/LlmSettings"
+    },
+    "mature_content": {
+      "default": false,
+      "title": "Mature Content",
+      "type": "boolean"
+    },
+    "music": {
+      "$ref": "#/$defs/MusicSettings"
+    },
+    "narrator_style": {
+      "default": "conversational",
+      "title": "Narrator Style",
+      "type": "string"
+    },
+    "prompt_history_clamp_chars": {
+      "default": 12000,
+      "title": "Prompt History Clamp Chars",
+      "type": "integer"
+    },
+    "typewriter_speed_chars_per_sec": {
+      "default": 60,
+      "maximum": 1000,
+      "minimum": 1,
+      "title": "Typewriter Speed Chars Per Sec",
+      "type": "integer"
+    },
+    "user_profile": {
+      "$ref": "#/$defs/UserProfile"
+    }
+  },
+  "title": "Settings",
+  "type": "object"
+}

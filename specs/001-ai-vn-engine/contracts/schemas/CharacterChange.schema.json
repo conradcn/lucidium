@@ -1,0 +1,49 @@
+{
+  "$defs": {
+    "CharacterAttributeField": {
+      "enum": [
+        "description",
+        "outfit",
+        "pose",
+        "expression",
+        "effects",
+        "decals",
+        "name",
+        "hair_color",
+        "hairstyle",
+        "eye_color",
+        "skin",
+        "build",
+        "bust",
+        "ethnicity",
+        "gender",
+        "kind",
+        "physical_description",
+        "pronouns"
+      ],
+      "title": "CharacterAttributeField",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "character_id": {
+      "title": "Character Id",
+      "type": "string"
+    },
+    "field": {
+      "$ref": "#/$defs/CharacterAttributeField"
+    },
+    "new_value": {
+      "title": "New Value",
+      "type": "string"
+    }
+  },
+  "required": [
+    "character_id",
+    "field",
+    "new_value"
+  ],
+  "title": "CharacterChange",
+  "type": "object"
+}

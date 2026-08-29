@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "Swap the current scene's backdrop to a different environment.\nMutates the current dialog node's ``location_id`` to point at\nthe supplied environment id, so the renderer's location-walk\n(StoryPanel ``activeEnvironmentId``) lands on this env's\npre-rendered image. Useful when several environments have been\nrendered up-front and the player wants to drop the current scene\nonto one of them without re-walking dialog or asking the LLM to\nwrite a new beat.",
+  "properties": {
+    "environment_id": {
+      "title": "Environment Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "environment_id"
+  ],
+  "title": "C2SEditEnvironmentApply",
+  "type": "object"
+}

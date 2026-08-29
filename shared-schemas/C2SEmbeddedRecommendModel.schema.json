@@ -1,0 +1,13 @@
+{
+  "additionalProperties": false,
+  "description": "Ask the backend which base model it would download for THIS\nmachine (GPU vendor + VRAM heuristic). Cheap + network-free; the\nfirst-run wizard calls it to fill the ``<highlight>`` in its copy\nand to know which key the download button should request. Empty\n``models_dir`` means \"use the default\" \u2014 same fallback as\n``ImageSettings.embedded_models_dir`` \u2014 and is only used to report\nwhether the directory already holds checkpoints.",
+  "properties": {
+    "models_dir": {
+      "default": "",
+      "title": "Models Dir",
+      "type": "string"
+    }
+  },
+  "title": "C2SEmbeddedRecommendModel",
+  "type": "object"
+}

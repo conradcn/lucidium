@@ -1,0 +1,30 @@
+{
+  "additionalProperties": false,
+  "description": "RFC 6902-style operation. ``op`` is ``replace``/``add``/``remove``.",
+  "properties": {
+    "op": {
+      "title": "Op",
+      "type": "string"
+    },
+    "path": {
+      "title": "Path",
+      "type": "string"
+    },
+    "value": {
+      "anyOf": [
+        {},
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Value"
+    }
+  },
+  "required": [
+    "op",
+    "path"
+  ],
+  "title": "PatchOp",
+  "type": "object"
+}

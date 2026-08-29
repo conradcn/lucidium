@@ -1,0 +1,430 @@
+{
+  "$defs": {
+    "CharacterAttributeField": {
+      "enum": [
+        "description",
+        "outfit",
+        "pose",
+        "expression",
+        "effects",
+        "decals",
+        "name",
+        "hair_color",
+        "hairstyle",
+        "eye_color",
+        "skin",
+        "build",
+        "bust",
+        "ethnicity",
+        "gender",
+        "kind",
+        "physical_description",
+        "pronouns"
+      ],
+      "title": "CharacterAttributeField",
+      "type": "string"
+    },
+    "CharacterChange": {
+      "additionalProperties": false,
+      "properties": {
+        "character_id": {
+          "title": "Character Id",
+          "type": "string"
+        },
+        "field": {
+          "$ref": "#/$defs/CharacterAttributeField"
+        },
+        "new_value": {
+          "title": "New Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "character_id",
+        "field",
+        "new_value"
+      ],
+      "title": "CharacterChange",
+      "type": "object"
+    },
+    "CharacterKind": {
+      "description": "Branches the character generation pipeline.\n\n``human`` (default) flows through the existing structured\nanatomy fields \u2014 gender, ethnicity, hair, eye colour, build,\netc. \u2014 that map cleanly onto SDXL's portrait prior. ``nonhuman``\nskips most of those (a dragon doesn't have ``hair_color``,\na ghost doesn't have ``bust``) and uses the freeform\n``physical_description`` field instead. This lets the\nstoryteller introduce robots, monsters, spirits, animals,\neldritch beings, and the like without forcing them into a\nperson-shaped schema and producing nonsense fields.",
+      "enum": [
+        "human",
+        "nonhuman"
+      ],
+      "title": "CharacterKind",
+      "type": "string"
+    },
+    "DialogNode": {
+      "additionalProperties": false,
+      "properties": {
+        "character_changes": {
+          "items": {
+            "$ref": "#/$defs/CharacterChange"
+          },
+          "title": "Character Changes",
+          "type": "array"
+        },
+        "chosen_option_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chosen Option Id"
+        },
+        "entering_character_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Entering Character Ids",
+          "type": "array"
+        },
+        "generation_metadata": {
+          "$ref": "#/$defs/GenerationMetadata"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "leaving_character_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Leaving Character Ids",
+          "type": "array"
+        },
+        "location_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location Id"
+        },
+        "location_lighting": {
+          "default": "",
+          "title": "Location Lighting",
+          "type": "string"
+        },
+        "location_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location Prompt"
+        },
+        "new_characters": {
+          "items": {
+            "$ref": "#/$defs/NewCharacterDescriptor"
+          },
+          "title": "New Characters",
+          "type": "array"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/DialogOption"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Id"
+        },
+        "premise_hash": {
+          "title": "Premise Hash",
+          "type": "string"
+        },
+        "speaker_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speaker Id"
+        },
+        "state": {
+          "$ref": "#/$defs/DialogNodeState",
+          "default": "speculative"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        }
+      },
+      "required": [
+        "premise_hash"
+      ],
+      "title": "DialogNode",
+      "type": "object"
+    },
+    "DialogNodeState": {
+      "enum": [
+        "speculative",
+        "pending_text",
+        "ready",
+        "committed",
+        "invalidated"
+      ],
+      "title": "DialogNodeState",
+      "type": "string"
+    },
+    "DialogOption": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "DialogOption",
+      "type": "object"
+    },
+    "GenerationMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "latency_ms": {
+          "default": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "prompt_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Hash"
+        },
+        "seed_parameters": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "title": "Seed Parameters",
+          "type": "object"
+        },
+        "tokens_in": {
+          "default": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "default": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        }
+      },
+      "title": "GenerationMetadata",
+      "type": "object"
+    },
+    "NewCharacterDescriptor": {
+      "additionalProperties": false,
+      "description": "Full descriptor for a character introduced by a dialog beat.\n\nThe LLM emits this when a beat references a character ID that\ndoesn't yet exist on the stage. The handler turns each descriptor\ninto a full ``Character`` (assigning a seed) before applying the\nbeat, so ``entering_character_ids`` always resolves cleanly.\n\nThe schema mirrors ``Character`` \u2014 ``kind`` branches the\nrendering pipeline (``human`` \u2192 structured anatomy fields;\n``nonhuman`` \u2192 freeform ``physical_description`` with empty\nanatomy fields). All human-anatomy fields default to empty\nstring so the LLM can omit them on nonhuman entries; the\nportrait builder filters empties out so we don't emit stray\n``\" hair\"`` or ``\"thirty-year-old \"`` tags.",
+      "properties": {
+        "age": {
+          "default": 30,
+          "minimum": 0,
+          "title": "Age",
+          "type": "integer"
+        },
+        "build": {
+          "default": "",
+          "title": "Build",
+          "type": "string"
+        },
+        "bust": {
+          "default": "",
+          "title": "Bust",
+          "type": "string"
+        },
+        "decals": {
+          "default": "",
+          "title": "Decals",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "effects": {
+          "default": "",
+          "title": "Effects",
+          "type": "string"
+        },
+        "ethnicity": {
+          "default": "",
+          "title": "Ethnicity",
+          "type": "string"
+        },
+        "expression": {
+          "default": "neutral",
+          "title": "Expression",
+          "type": "string"
+        },
+        "eye_color": {
+          "default": "",
+          "title": "Eye Color",
+          "type": "string"
+        },
+        "gender": {
+          "default": "",
+          "title": "Gender",
+          "type": "string"
+        },
+        "hair_color": {
+          "default": "",
+          "title": "Hair Color",
+          "type": "string"
+        },
+        "hairstyle": {
+          "default": "",
+          "title": "Hairstyle",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/CharacterKind",
+          "default": "human"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "outfit": {
+          "default": "practical everyday clothing",
+          "title": "Outfit",
+          "type": "string"
+        },
+        "physical_description": {
+          "default": "",
+          "title": "Physical Description",
+          "type": "string"
+        },
+        "pose": {
+          "default": "standing",
+          "title": "Pose",
+          "type": "string"
+        },
+        "pronouns": {
+          "default": "",
+          "title": "Pronouns",
+          "type": "string"
+        },
+        "skin": {
+          "default": "",
+          "title": "Skin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ],
+      "title": "NewCharacterDescriptor",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "committed_path": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Committed Path",
+      "type": "array"
+    },
+    "nodes": {
+      "additionalProperties": {
+        "$ref": "#/$defs/DialogNode"
+      },
+      "title": "Nodes",
+      "type": "object"
+    },
+    "root_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Root Id"
+    }
+  },
+  "title": "DialogTree",
+  "type": "object"
+}

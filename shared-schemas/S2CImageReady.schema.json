@@ -1,0 +1,38 @@
+{
+  "$defs": {
+    "ImageKind": {
+      "enum": [
+        "portrait",
+        "background"
+      ],
+      "title": "ImageKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "image_id": {
+      "title": "Image Id",
+      "type": "string"
+    },
+    "image_path": {
+      "title": "Image Path",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/ImageKind"
+    },
+    "target_id": {
+      "title": "Target Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "target_id",
+    "image_path",
+    "image_id"
+  ],
+  "title": "S2CImageReady",
+  "type": "object"
+}

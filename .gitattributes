@@ -1,0 +1,6 @@
+# Force LF line endings for files that MUST be interpreted by a
+# Unix shell. Without this, repositories cloned on Windows with the
+# default ``core.autocrlf=true`` would land bash scripts with CRLF
+# line endings, and ``/usr/bin/env bash`` chokes with
+# ``/usr/bin/env\r: No such file or directory`` on WSL / Linux.
+*.sh text eol=lf

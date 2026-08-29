@@ -1,0 +1,20 @@
+{
+  "additionalProperties": false,
+  "description": "Rename a side-character stub the player previously added.\n\nThe ``description`` replaces both ``name`` and ``description`` on\nthe stub \u2014 at this stage the LLM hasn't expanded the stub yet, so\nthe two fields are still in sync. Confirm-time expansion re-fills\nthem from the new description.",
+  "properties": {
+    "character_id": {
+      "title": "Character Id",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    }
+  },
+  "required": [
+    "character_id",
+    "description"
+  ],
+  "title": "C2SNewGameEditSideCharacter",
+  "type": "object"
+}

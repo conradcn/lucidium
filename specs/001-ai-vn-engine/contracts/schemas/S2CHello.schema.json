@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "has_save": {
+      "title": "Has Save",
+      "type": "boolean"
+    },
+    "protocol_version": {
+      "default": 1,
+      "title": "Protocol Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "has_save"
+  ],
+  "title": "S2CHello",
+  "type": "object"
+}

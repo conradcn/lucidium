@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "option_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Option Id"
+    }
+  },
+  "title": "C2SPlayAdvance",
+  "type": "object"
+}

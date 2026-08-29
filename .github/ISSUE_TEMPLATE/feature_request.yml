@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest a capability or change to the engine
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation you hit, not just the feature you want.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should the engine do instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the engine?
+      options:
+        - Frontend / Electron UI
+        - Backend / orchestration
+        - Image generation
+        - Voice / audio
+        - Save & load
+        - Packaging / first-run setup
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you tried, or other designs you ruled out and why.
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Fit with the project
+      description: |
+        Lucidium runs entirely on the player's machine, offline by default.
+        See [the constitution](../blob/master/.specify/memory/constitution.md).
+      options:
+        - label: This works without requiring a network service the player does not control.
+        - label: I searched existing issues for a duplicate.
+          required: true

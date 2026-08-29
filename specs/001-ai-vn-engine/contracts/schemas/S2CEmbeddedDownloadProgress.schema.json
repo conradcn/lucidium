@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "description": "Streamed progress during a ``c2s/embedded/download_model``.\n\n``key`` / ``display_name`` name the model being fetched. ``stage`` is\na short phase label (``resolving`` / ``downloading`` / ``saving``) so\nthe UI can caption the bar without parsing byte counts. ``bytes_done``\nis the cumulative bytes written; ``bytes_total`` is the server's\nContent-Length when known, else ``None`` (indeterminate bar).",
+  "properties": {
+    "bytes_done": {
+      "default": 0,
+      "title": "Bytes Done",
+      "type": "integer"
+    },
+    "bytes_total": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Bytes Total"
+    },
+    "display_name": {
+      "title": "Display Name",
+      "type": "string"
+    },
+    "key": {
+      "title": "Key",
+      "type": "string"
+    },
+    "stage": {
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "required": [
+    "key",
+    "display_name",
+    "stage"
+  ],
+  "title": "S2CEmbeddedDownloadProgress",
+  "type": "object"
+}

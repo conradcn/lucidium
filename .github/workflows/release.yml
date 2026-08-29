@@ -1,0 +1,118 @@
+# Tagged-release build.
+#
+# Produces the two shippable artefacts from the tagged source and
+# publishes a SHA-256 next to each, so a user downloading a ~2 GB
+# self-extractor or AppImage can verify it against a value that came
+# out of a public build log rather than trusting the upload.
+#
+#   windows -> frontend/release/Lucidium-Setup.exe   (7z self-extractor)
+#   linux   -> frontend/release/Lucidium-*.AppImage
+#
+# Both jobs run the same scripts a contributor runs locally
+# (``package.ps1`` / ``scripts/package-linux.sh``) rather than a
+# CI-only reimplementation, so a green tag build means those scripts
+# still work.
+#
+# NOTE ON RUNNER CAPACITY: these bundles freeze diffusers /
+# transformers / accelerate plus a pre-unpacked CPU torch overlay, and
+# warm the rembg U2NET (~176 MB) and insightface buffalo_l (~280 MB)
+# caches. That is close to a hosted runner's free disk, hence the
+# reclaim step in each job. If a tag build fails on ENOSPC, the fix is
+# a larger runner, not a smaller bundle.
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Set up backend venv
+        shell: pwsh
+        run: ./start.ps1 -Setup
+
+      - name: Build Windows package
+        shell: pwsh
+        run: ./package.ps1 -WindowsOnly
+
+      - name: Checksum
+        shell: pwsh
+        run: |
+          $exe = "frontend/release/Lucidium-Setup.exe"
+          if (-not (Test-Path $exe)) { throw "package.ps1 finished but $exe is missing." }
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          # Two-space separator + bare filename = `sha256sum -c` format.
+          "$hash  $(Split-Path $exe -Leaf)" |
+            Set-Content -Path "$exe.sha256" -Encoding ascii -NoNewline
+          Write-Host "$hash  Lucidium-Setup.exe"
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lucidium-windows-${{ github.ref_name }}
+          path: |
+            frontend/release/Lucidium-Setup.exe
+            frontend/release/Lucidium-Setup.exe.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # AppImage assembly needs FUSE for the runtime, and the hosted
+      # image ships a lot we do not need.
+      - name: Reclaim disk / install FUSE
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get update
+          sudo apt-get install -y libfuse2
+
+      - name: Build Linux package
+        run: bash scripts/package-linux.sh
+
+      - name: Checksum
+        run: |
+          set -euo pipefail
+          appimage=$(ls -t frontend/release/Lucidium-*.AppImage | head -n1)
+          [ -n "$appimage" ] || { echo "no AppImage produced" >&2; exit 1; }
+          ( cd "$(dirname "$appimage")" \
+            && sha256sum "$(basename "$appimage")" > "$(basename "$appimage").sha256" \
+            && cat "$(basename "$appimage").sha256" )
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lucidium-linux-${{ github.ref_name }}
+          path: |
+            frontend/release/Lucidium-*.AppImage
+            frontend/release/Lucidium-*.AppImage.sha256
+          if-no-files-found: error
+          retention-days: 30

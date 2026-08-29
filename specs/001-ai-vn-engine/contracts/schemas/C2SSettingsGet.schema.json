@@ -1,0 +1,6 @@
+{
+  "additionalProperties": false,
+  "properties": {},
+  "title": "C2SSettingsGet",
+  "type": "object"
+}

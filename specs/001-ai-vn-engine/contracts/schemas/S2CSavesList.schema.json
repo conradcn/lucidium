@@ -1,0 +1,60 @@
+{
+  "$defs": {
+    "SaveSummaryPayload": {
+      "additionalProperties": false,
+      "properties": {
+        "corrupt": {
+          "default": false,
+          "title": "Corrupt",
+          "type": "boolean"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "last_played_at": {
+          "title": "Last Played At",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "schema_version": {
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "last_played_at",
+        "created_at",
+        "schema_version",
+        "summary"
+      ],
+      "title": "SaveSummaryPayload",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "saves": {
+      "items": {
+        "$ref": "#/$defs/SaveSummaryPayload"
+      },
+      "title": "Saves",
+      "type": "array"
+    }
+  },
+  "title": "S2CSavesList",
+  "type": "object"
+}

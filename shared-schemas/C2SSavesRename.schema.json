@@ -1,0 +1,20 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "new_name": {
+      "title": "New Name",
+      "type": "string"
+    },
+    "save_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,64}$",
+      "title": "Save Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "save_id",
+    "new_name"
+  ],
+  "title": "C2SSavesRename",
+  "type": "object"
+}

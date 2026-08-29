@@ -1,0 +1,40 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "environment_id": {
+      "title": "Environment Id",
+      "type": "string"
+    },
+    "field": {
+      "title": "Field",
+      "type": "string"
+    },
+    "value": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Value"
+    }
+  },
+  "required": [
+    "environment_id",
+    "field",
+    "value"
+  ],
+  "title": "C2SEditEnvironment",
+  "type": "object"
+}

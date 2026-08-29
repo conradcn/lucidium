@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "Ack for ``c2s/play/cancel``.\n\n``cancelled`` is ``False`` when there was nothing in flight to\nstop \u2014 the renderer uses it to decide whether to keep waiting for\nthe generation's messages or drop the spinner immediately.",
+  "properties": {
+    "cancelled": {
+      "title": "Cancelled",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "cancelled"
+  ],
+  "title": "S2CPlayCancelled",
+  "type": "object"
+}

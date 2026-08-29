@@ -1,0 +1,12 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "overrides": {
+      "additionalProperties": true,
+      "title": "Overrides",
+      "type": "object"
+    }
+  },
+  "title": "C2SNewGameConfirm",
+  "type": "object"
+}

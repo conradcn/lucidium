@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "Clear ``removed`` and place the character back on stage at\nthe current node. Inverse of dismiss; also useful when the\nstoryteller has lost track of a character the player still\nwants in the scene.",
+  "properties": {
+    "character_id": {
+      "title": "Character Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "character_id"
+  ],
+  "title": "C2SEditCharacterShow",
+  "type": "object"
+}

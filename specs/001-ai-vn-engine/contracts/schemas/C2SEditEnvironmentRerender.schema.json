@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "Re-trigger the background pipeline for a single environment.\nThe handler bumps the environment's seed to force a different\ndraw (same prompt \u2192 different image) and runs the background\nworkflow against the new seed. The rendered file replaces\n``environment.image_path``.",
+  "properties": {
+    "environment_id": {
+      "title": "Environment Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "environment_id"
+  ],
+  "title": "C2SEditEnvironmentRerender",
+  "type": "object"
+}

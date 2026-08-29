@@ -1,0 +1,22 @@
+{
+  "additionalProperties": false,
+  "description": "Response to ``c2s/embedded/list_models``. ``models_dir`` is\nthe resolved absolute path the renderer can show as a tooltip\n(so the user knows where to drop additional checkpoints).\n``models`` is the alphabetised list of filenames found there.",
+  "properties": {
+    "models": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Models",
+      "type": "array"
+    },
+    "models_dir": {
+      "title": "Models Dir",
+      "type": "string"
+    }
+  },
+  "required": [
+    "models_dir"
+  ],
+  "title": "S2CEmbeddedModels",
+  "type": "object"
+}

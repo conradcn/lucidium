@@ -1,0 +1,37 @@
+{
+  "additionalProperties": false,
+  "description": "Streamed download progress during a ``c2s/torch_overlay/install``.\n\n``flavor`` names the flavor being installed. ``bytes_done`` is the\ncumulative bytes fetched across all of the flavor's wheels;\n``bytes_total`` is the known total when the index/server exposed it,\nelse ``None`` (the UI shows an indeterminate bar). ``stage`` is a\nshort human-readable phase (``resolving`` / ``downloading`` /\n``unpacking`` / ``installed``) so the UI can label the bar without\nparsing byte counts.",
+  "properties": {
+    "bytes_done": {
+      "default": 0,
+      "title": "Bytes Done",
+      "type": "integer"
+    },
+    "bytes_total": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Bytes Total"
+    },
+    "flavor": {
+      "title": "Flavor",
+      "type": "string"
+    },
+    "stage": {
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "required": [
+    "flavor",
+    "stage"
+  ],
+  "title": "S2CTorchOverlayProgress",
+  "type": "object"
+}

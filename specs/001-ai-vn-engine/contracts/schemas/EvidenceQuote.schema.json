@@ -1,0 +1,26 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "source_node_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Node Id"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "text"
+  ],
+  "title": "EvidenceQuote",
+  "type": "object"
+}
