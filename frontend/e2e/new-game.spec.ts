@@ -2,14 +2,20 @@ import { test, expect } from "@playwright/test";
 
 import { APP_URL, installHappyPathMock, installMockWs } from "./helpers";
 
-// Each step transition must complete inside this window. The bound
-// is intentionally tight: a real LLM call on a slow provider can
-// take 10+ s, so anything well below that here means the renderer
-// is advancing optimistically rather than waiting on the network.
-// CI machines + the 16-button Genre step's React commit pause can
-// each cost ~150 ms; the 700 ms ceiling absorbs both without
-// masking real regressions.
-const IMMEDIATE_MS = 700;
+// Each step transition must complete inside this window. A real LLM
+// call on a slow provider takes 10+ s, so a transition landing well
+// inside this bound means the renderer is advancing optimistically
+// rather than waiting on the network — that, not a specific frame
+// budget, is what the assertion exists to prove.
+//
+// The value is generous on purpose. Measured transitions under
+// `fullyParallel` load are ~300-500 ms, but the tail stretches when
+// workers contend for CPU (2.1 s observed locally over 80 samples)
+// and a hosted CI runner is slower still. A tighter ceiling fails on
+// scheduler jitter rather than on a real regression, while 3 s is
+// still far short of any genuine LLM round-trip.
+// Kept in step with IMMEDIATE_MS in interview-slow-llm.spec.ts.
+const IMMEDIATE_MS = 3_000;
 
 test.describe("New Game interview", () => {
   test.beforeEach(async ({ page }) => {
@@ -41,7 +47,7 @@ test.describe("New Game interview", () => {
     await expect(page.getByText("The harbor wakes slow.")).toBeVisible();
   });
 
-  test("every step transition is immediate (well under one second each)", async ({
+  test("every step transition is immediate (never waits on the LLM)", async ({
     page,
   }) => {
     // The non-blocking interview contract: clicking any answer must

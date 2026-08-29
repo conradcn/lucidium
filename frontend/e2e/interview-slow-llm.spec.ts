@@ -22,19 +22,39 @@
  *   * Character Description (Step 4) — LLM-driven; SLOW path tested.
  *   * Name (Step 5) — LLM-driven; SLOW path tested.
  *
- * This spec injects a 5-second LLM delay into the LLM-driven steps.
- * The step transitions MUST appear inside ~600 ms; the options for
- * the LLM-driven steps MUST appear later, before the test ends.
+ * This spec injects a multi-second LLM delay into the LLM-driven
+ * steps. The step transitions MUST appear in a fraction of that
+ * delay (see IMMEDIATE_MS); the options for the LLM-driven steps
+ * MUST appear later, before the test ends.
  */
 
 import { test, expect } from "@playwright/test";
 
 import { APP_URL, installMockWs } from "./helpers";
 
-const SLOW_DELIVERY_MS = 5_000;
-const IMMEDIATE_MS = 600; // Includes the in-renderer click latency on slow CI.
+// The simulated LLM latency. Deliberately long: the wider the gap
+// between this and IMMEDIATE_MS, the more decisively a passing run
+// proves the step transition never sat on the LLM's critical path.
+const SLOW_DELIVERY_MS = 10_000;
+
+// The budget for a step transition. This is NOT a frame-rate target —
+// it is the ceiling that separates "advanced optimistically" from
+// "waited for the LLM". At a third of SLOW_DELIVERY_MS, any transition
+// that actually blocked on the delivery would overshoot it by 3x.
+//
+// The generous absolute value is deliberate. The measured transition
+// under `fullyParallel` load is ~300-500 ms, but the tail runs long
+// when workers contend for CPU (2.1 s observed locally over 80
+// samples), and a hosted CI runner is slower still. A tighter bound
+// fails on scheduler jitter rather than on a real regression.
+const IMMEDIATE_MS = 3_000;
 
 test.describe("Interview: non-blocking transitions under a slow LLM", () => {
+  // Two steps wait out the full SLOW_DELIVERY_MS, which puts this
+  // spec past Playwright's 30 s default on its own.
+  test.describe.configure({ timeout: 90_000 });
+
+
   test("each step appears immediately; options arrive via follow-up patch", async ({
     page,
   }) => {
