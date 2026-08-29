@@ -6,8 +6,10 @@
  * options is slow. The renderer should:
  *   1. Receive a state/patch that flips ``/interview/step`` and
  *      includes empty options for the next step.
- *   2. Display the next step's heading + a "generating options"
- *      affordance while the LLM is still in flight.
+ *   2. Display the next step's heading immediately, with the
+ *      renderer's built-in DEFAULT_OPTIONS already usable and a
+ *      spinner marking them as provisional, while the LLM is
+ *      still in flight.
  *   3. Patch the options into the grid via a follow-up state/patch
  *      whenever the backend's prefetch finally lands.
  *
@@ -110,7 +112,7 @@ test.describe("Interview: non-blocking transitions under a slow LLM", () => {
       return transition(
         "genre", "genre", payload.answer,
         "character_description", "/interview/character_description_options",
-        ["wry archivist", "retired bounty hunter"]
+        ["tidewatch cartographer", "disgraced harbormaster"]
       );
     }
     if (payload.step === "character_description") {
@@ -118,7 +120,7 @@ test.describe("Interview: non-blocking transitions under a slow LLM", () => {
       return transition(
         "character_description", "character_description", payload.answer,
         "name", "/interview/name_options",
-        ["Iris Vale", "Hale Stone"]
+        ["Sable Wren", "Corin Ashgrove"]
       );
     }
     if (payload.step === "name") {
@@ -172,34 +174,52 @@ test.describe("Interview: non-blocking transitions under a slow LLM", () => {
     // 3. Genre → Character Description. SLOW (LLM-driven).
     before = Date.now();
     await page.getByRole("button", { name: "Mystery", exact: true }).click();
-    await expect(page.getByTestId("interview-loading-wrap")).toBeVisible({
+    // The step itself must be up immediately. It is NOT a loading splash
+    // any more: the renderer shows its built-in DEFAULT_OPTIONS right
+    // away, flagged with a spinner, so the player can pick and move on
+    // instead of waiting on the LLM.
+    await expect(page.getByTestId("interview-character_description")).toBeVisible({
       timeout: IMMEDIATE_MS,
     });
     elapsed = Date.now() - before;
     expect(elapsed, `genre→character transition was ${elapsed} ms`).toBeLessThanOrEqual(
       IMMEDIATE_MS,
     );
+    // Defaults are on screen and usable while the LLM is still in flight.
+    await expect(page.getByTestId("interview-options-loading")).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "wry archivist" }),
+      page.getByRole("button", { name: "cynical detective" }),
+    ).toBeVisible();
+    // ...and the real options replace them when they land, clearing the
+    // spinner. These values are deliberately absent from DEFAULT_OPTIONS
+    // so this can only pass if the follow-up patch actually applied.
+    await expect(
+      page.getByRole("button", { name: "tidewatch cartographer" }),
     ).toBeVisible({ timeout: SLOW_DELIVERY_MS + 1_000 });
+    await expect(page.getByTestId("interview-options-loading")).toHaveCount(0);
 
     // 4. Character → Name. SLOW.
     before = Date.now();
-    await page.getByRole("button", { name: "wry archivist" }).click();
-    await expect(page.getByTestId("interview-loading-wrap")).toBeVisible({
+    await page.getByRole("button", { name: "tidewatch cartographer" }).click();
+    await expect(page.getByTestId("interview-name")).toBeVisible({
       timeout: IMMEDIATE_MS,
     });
     elapsed = Date.now() - before;
     expect(elapsed, `character→name transition was ${elapsed} ms`).toBeLessThanOrEqual(
       IMMEDIATE_MS,
     );
+    await expect(page.getByTestId("interview-options-loading")).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Iris Vale" }),
+      page.getByRole("button", { name: "Mira Quill" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Sable Wren" }),
     ).toBeVisible({ timeout: SLOW_DELIVERY_MS + 1_000 });
+    await expect(page.getByTestId("interview-options-loading")).toHaveCount(0);
 
     // 5. Name → Review. Inline.
     before = Date.now();
-    await page.getByRole("button", { name: "Iris Vale" }).click();
+    await page.getByRole("button", { name: "Sable Wren" }).click();
     await expect(page.getByRole("heading", { name: "Review" })).toBeVisible({
       timeout: IMMEDIATE_MS,
     });

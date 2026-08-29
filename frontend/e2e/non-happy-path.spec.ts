@@ -258,6 +258,8 @@ test.describe("New Game interview — optimistic buttons + reset on remount", ()
 
     // Click Menu — phase returns to start.
     await page.getByRole("button", { name: "Menu" }).click();
+    // Menu now asks for confirmation before abandoning the run.
+    await page.getByRole("button", { name: "Return to menu" }).click();
     await expect(page.getByTestId("start-screen")).toBeVisible();
 
     // Now click New Game again. Must land on Setting (step 1), not
@@ -296,6 +298,8 @@ test.describe("New Game interview — optimistic buttons + reset on remount", ()
     await expect(page.getByTestId("main-view")).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole("button", { name: "Menu" }).click();
+    // Menu now asks for confirmation before abandoning the run.
+    await page.getByRole("button", { name: "Return to menu" }).click();
     await expect(page.getByTestId("start-screen")).toBeVisible();
 
     // The carousel must be back in cycling mode — no preview-locked

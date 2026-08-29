@@ -82,3 +82,6 @@ backend/krea_renders/
 
 # Local WSL smoke-launch helper (hardcoded developer paths)
 /wsl-check.sh
+
+# Internal promotion drafts — kept local, not published
+/docs/promo/

@@ -207,7 +207,11 @@ test.describe("UI tour — every screen", () => {
     await page.getByRole("button", { name: "Story" }).click();
     await expect(page.locator(".story-panel")).toBeVisible();
 
-    for (const tab of ["History", "World", "Environments", "Characters", "Tree", "Options"]) {
+    // Tab labels track ALL_TABS in StoryPanel/index.tsx — "Environments"
+    // and "Characters" were relabelled to "Scenes" and "Cast". "Music" is
+    // omitted deliberately: it renders only when settings.music.enabled,
+    // which the happy-path mock leaves off.
+    for (const tab of ["History", "World", "Scenes", "Cast", "Tree", "Options"]) {
       await page
         .locator(".story-panel .tabs button", { hasText: tab })
         .click();
@@ -261,7 +265,9 @@ test.describe("UI tour — every screen", () => {
     // Cancel back to MainView, reopen Story. The persisted active
     // tab is "options" (we just clicked it), so we explicitly switch
     // back to History — that's the tab whose scroll we set to 800.
-    await page.getByRole("button", { name: "Cancel" }).click();
+    // The settings screen's exit control is "Done" (SettingsScreen.tsx);
+    // it no longer offers a "Cancel".
+    await page.getByRole("button", { name: "Done" }).click();
     await expect(page.getByTestId("main-view")).toBeVisible();
     await page.getByRole("button", { name: "Story" }).click();
     await expect(page.locator(".story-panel")).toBeVisible();

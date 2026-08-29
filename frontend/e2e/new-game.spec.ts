@@ -32,7 +32,7 @@ test.describe("New Game interview", () => {
     await expect(page.getByRole("heading", { name: "Your character" })).toBeVisible();
     await page.getByRole("button", { name: "wry archivist" }).click();
 
-    await expect(page.getByRole("heading", { name: "Their name" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Their identity" })).toBeVisible();
     await page.getByRole("button", { name: "Iris Vale" }).click();
 
     await expect(page.getByRole("heading", { name: "Review" })).toBeVisible();
@@ -61,9 +61,9 @@ test.describe("New Game interview", () => {
       {
         heading: "Your character",
         pick: "wry archivist",
-        next: "Their name",
+        next: "Their identity",
       },
-      { heading: "Their name", pick: "Iris Vale", next: "Review" },
+      { heading: "Their identity", pick: "Iris Vale", next: "Review" },
     ];
 
     for (const step of steps) {
@@ -108,7 +108,11 @@ test.describe("New Game interview", () => {
       .getByRole("textbox", { name: /One-line description/ })
       .fill("a gruff retired bounty hunter");
     await page.getByRole("button", { name: "Add" }).click();
-    await expect(page.getByText("Hale Stone")).toBeVisible();
+    // The side-character row renders its name in an editable input, so
+    // the name is a form value rather than page text.
+    await expect(
+      page.getByTestId("side-character-row-sc1").locator("input"),
+    ).toHaveValue("Hale Stone");
   });
 });
 
