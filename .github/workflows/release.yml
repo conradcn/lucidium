@@ -64,7 +64,7 @@ jobs:
           Write-Host "$hash  Lucidium-Setup.exe"
 
       - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lucidium-windows-${{ github.ref_name }}
           path: |
@@ -108,7 +108,7 @@ jobs:
             && cat "$(basename "$appimage").sha256" )
 
       - name: Upload Linux artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lucidium-linux-${{ github.ref_name }}
           path: |
