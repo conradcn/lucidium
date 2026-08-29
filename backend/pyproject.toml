@@ -21,7 +21,7 @@ dependencies = [
     # ``Timeout``) plus respx in tests, which tracks httpx itself. If
     # a future httpx release does break us, pin the specific bad
     # release rather than re-adding a rolling ceiling.
-    "httpx>=0.27",
+    "httpx>=0.28.1",
     # Pillow is used by ``orchestration.portrait_post`` to tightly
     # crop the alpha bbox of RMBG-output portraits before saving,
     # and by ``scripts.eval_character_consistency`` to composite
