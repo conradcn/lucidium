@@ -77,7 +77,7 @@ dependencies = [
     "torchvision>=0.18",
     "transformers>=5,<6",
     "huggingface_hub>=1,<2",
-    "accelerate>=0.30,<2",
+    "accelerate>=1.14.0,<2",
     "rembg[cpu]>=2.0,<3",
     "safetensors>=0.4,<1",
     # ``opencv-python-headless`` powers the face-detector that
