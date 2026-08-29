@@ -145,7 +145,7 @@ safety = [
 # ``package.ps1`` and ``scripts/package-linux.sh``. Bump deliberately,
 # and re-run a full package on both platforms when you do.
 packaging = [
-    "pyinstaller==6.21.0",
+    "pyinstaller==6.22.2",
 ]
 
 [project.scripts]
