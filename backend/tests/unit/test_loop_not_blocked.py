@@ -21,10 +21,16 @@ from lucidium.domain.settings import Settings
 from lucidium.domain.world import WorldState
 from lucidium.orchestration.assets import _render_or_await
 from lucidium.orchestration.session import Session
+from lucidium.persistence import save_store
 
 # Long enough that a loop-thread call would obviously starve the
 # watcher, short enough not to drag the suite out.
 _BLOCK_S = 0.25
+
+# Per-commit block for the commit test. Six of these run serialised
+# behind ``_commit_lock``, so keep it well under ``_BLOCK_S`` to avoid
+# adding a second and a half to the suite.
+_COMMIT_BLOCK_S = 0.05
 
 
 class _Ticker:
@@ -111,14 +117,37 @@ def _game() -> Game:
     )
 
 
-async def test_commit_does_not_block_the_loop(tmp_path: Path) -> None:
+async def test_commit_does_not_block_the_loop(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Put a known block on the write, the same way the render test
+    # above does. Without it this test measured how long six real
+    # ``commit_save`` calls happen to take on the host: the threshold
+    # was ``> 3`` ticks, i.e. ~20 ms of wall clock, and on a machine
+    # whose ``tmp_path`` is fast (a CI runner on tmpfs) all six landed
+    # in ~15 ms and it failed with exactly 3 ticks — a pass that
+    # depended on the filesystem being SLOW, which is backwards.
+    # Blocking deliberately makes the assertion about where the work
+    # runs, not how quick it is: off the loop, the ticker keeps
+    # counting; back on the loop thread, it stops dead.
+    real_commit_save = save_store.commit_save
+
+    def slow_commit_save(*args: object, **kwargs: object) -> object:
+        time.sleep(_COMMIT_BLOCK_S)
+        return real_commit_save(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(save_store, "commit_save", slow_commit_save)
+
     session = Session(settings=Settings(), saves_root=tmp_path)
     session.game = _game()
 
     async with _Ticker() as ticker:
         await asyncio.gather(*(session.commit() for _ in range(6)))
 
-    assert ticker.ticks > 3, f"loop was starved during commit (only {ticker.ticks} ticks)"
+    # ``_commit_lock`` serialises the six, so this is 6 x 50 ms of
+    # blocking at a 5 ms tick — ~60 ticks with the loop free, and low
+    # single digits if the write ever moves back onto it.
+    assert ticker.ticks > 20, f"loop was starved during commit (only {ticker.ticks} ticks)"
     # Every commit landed and the save is readable — the serialising
     # lock means concurrent commits don't corrupt each other or lose the
     # ``os.replace`` race that Windows fails with WinError 5.
