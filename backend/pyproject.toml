@@ -79,7 +79,7 @@ dependencies = [
     "huggingface_hub>=1,<2",
     "accelerate>=0.30,<2",
     "rembg[cpu]>=2.0,<3",
-    "safetensors>=0.4,<1",
+    "safetensors>=0.8.0,<1",
     # ``opencv-python-headless`` powers the face-detector that
     # positions the embedded face-detail inpaint pass. Haar
     # cascade XML files ship with the wheel — no extra model
