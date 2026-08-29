@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import shutil
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -71,15 +71,39 @@ class SaveIdError(ValueError):
     terms rather than by trusting its callers."""
 
 
+def _require_bare_id(save_id: str) -> None:
+    """Refuse any ``save_id`` that is not a single directory name.
+
+    Parsed with the WINDOWS flavour on every platform, deliberately. A
+    ``save_id`` arrives over a socket that a Windows client can also
+    speak, and the POSIX flavour disagrees about what those strings
+    mean: ``"C:/Windows"`` is a *relative* two-component path on Linux
+    (so joining it lands harmlessly under the root) while it is an
+    absolute path that replaces the root on Windows, and
+    a backslash-separated ``C:`` path is one legal filename on
+    Linux and a rooted path on Windows. Judging the id by where it
+    happens to resolve therefore gives a different verdict per platform
+    for the same frame. Judging
+    the id itself — one component, no drive, no anchor, not a ``..`` —
+    gives the same verdict everywhere, and it is the constraint the wire
+    schema already advertises."""
+    parsed = PureWindowsPath(save_id)
+    if save_id in ("", ".", "..") or parsed.drive or parsed.root or len(parsed.parts) != 1:
+        raise SaveIdError(f"save id {save_id!r} is not a bare directory name")
+
+
 def _save_dir(save_id: str, root: Path | None = None) -> Path:
     """Resolve ``<saves-root>/<save_id>``, refusing anything that escapes.
 
     ``Path.__truediv__`` DISCARDS the base when the right operand is
     absolute (``Path("saves") / "C:/Windows"`` is ``C:/Windows``), and a
     ``..`` component walks out of the root, so the join alone is not a
-    confinement. We resolve both sides and require the result to be
-    inside the root — the check every destructive caller
-    (``delete_save``) and every write (``commit_save``) depends on."""
+    confinement. ``_require_bare_id`` rejects the shapes that could do
+    either; the containment check below then still holds the result to
+    the root, which also covers a symlink ``resolve()`` follows out —
+    the check every destructive caller (``delete_save``) and every write
+    (``commit_save``) depends on."""
+    _require_bare_id(save_id)
     base = (root or saves_dir()).expanduser()
     candidate = (base / save_id).resolve()
     resolved_base = base.resolve()
