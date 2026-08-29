@@ -61,7 +61,46 @@ jobs:
       - name: Type check
         run: mypy src
       - name: Test
-        run: pytest
+        shell: bash
+        run: |
+          set -o pipefail
+          pytest 2>&1 | tee pytest-out.log
+
+      # Republish a failing run's pytest summary as a check-run
+      # annotation.
+      #
+      # Why this exists: on this repository, a non-admin (including
+      # anyone driving CI through the public REST API) cannot read a
+      # job's raw logs — ``/actions/jobs/<id>/logs`` answers 403
+      # "Must have admin rights" — and ``/actions/artifacts/<id>/zip``
+      # answers 401 without a token. Check-run annotations are the one
+      # failure channel that IS readable anonymously
+      # (``/repos/<owner>/<repo>/check-runs/<job_id>/annotations``).
+      # Without this step a red ``Test`` step is visible but its cause
+      # is not, which is exactly how a Linux-only failure here stayed
+      # undiagnosed across several attempts.
+      #
+      # ``if: failure()`` — this costs nothing on a green run, and it
+      # does not swallow the failure: the ``Test`` step above has
+      # already recorded it.
+      - name: Publish failure summary as annotation
+        if: failure()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib
+
+          log = pathlib.Path("pytest-out.log")
+          text = log.read_text(errors="replace") if log.exists() else "(no pytest-out.log)"
+          # Annotation messages are size-capped; the tail carries the
+          # short summary and the last traceback, which is what
+          # identifies the failure.
+          tail = text[-8000:]
+          # Workflow commands are newline-delimited, so literal
+          # newlines in the payload have to be percent-encoded.
+          esc = tail.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+          print(f"::error title=pytest failure ({__import__('platform').system()})::{esc}")
+          PY
 
       # ``tests/smoke`` lives at the repo root, outside this job's
       # ``working-directory: backend`` and outside backend's
