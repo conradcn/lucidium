@@ -101,9 +101,9 @@ test("Load Game screenshot — varied save shapes", async ({ page }) => {
       })();
     `,
   });
+  // ``APP_URL`` carries ``skipWarning=1``, so the per-launch warning
+  // modal is suppressed and the start screen is clickable straight away.
   await page.goto(APP_URL);
-  // Dismiss the per-launch warning modal that sits over everything.
-  await page.getByRole("button", { name: "I understand" }).click();
   await page.getByRole("button", { name: "Load Game" }).click();
   await page.waitForSelector("[data-testid='load-game-screen']");
   // Wait briefly for save rows to land via the mocked s2c/saves/list reply.

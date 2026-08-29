@@ -47,8 +47,9 @@ test("First-time setup screenshot — image step", async ({ page }) => {
       })();
     `,
   });
+  // ``APP_URL`` carries ``skipWarning=1``, so the startup warning
+  // never renders here and there is nothing to dismiss.
   await page.goto(APP_URL);
-  await page.getByRole("button", { name: "I understand" }).click();
   // Settings arrive via state/patch on a microtask cycle; wait
   // for the wizard's phase wrapper directly so the routing
   // effect has time to land before we start clicking.
