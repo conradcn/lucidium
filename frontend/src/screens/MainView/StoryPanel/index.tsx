@@ -62,52 +62,96 @@ export function StoryPanel({ onClose, onOpenSettings }: Props): JSX.Element {
     : "history";
   const [tab, setTabRaw] = useState<TabKey>(initialTab);
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  // Where the player actually left the active tab. We keep it here
+  // instead of reading ``body.scrollTop`` when the effect tears down:
+  // by then React has already swapped the tab's content out (or the
+  // panel is unmounting), the body is short again, and the browser has
+  // clamped scrollTop to fit. Saving that clamped number is how the
+  // remembered offset used to decay on every switch — 800 became 595,
+  // then 390, then eventually 0.
+  const desiredScrollRef = useRef(0);
+  // Set while we write scrollTop ourselves. The scroll event our own
+  // write produces must not be mistaken for the player scrolling: a
+  // restore into content that hasn't grown yet lands clamped, and
+  // recording that would throw the saved offset away.
+  const restoringRef = useRef(false);
   const setTab = (next: TabKey): void => {
     rememberActiveTab(next);
     setTabRaw(next);
   };
 
-  // Restore scroll position when this panel mounts or when the tab
-  // changes. Without this the player loses their place after every
-  // Settings round-trip.
+  // Restore the scroll position when this panel mounts or when the tab
+  // changes, and save it again for the tab we're leaving. Without this
+  // the player loses their place after every Settings round-trip.
   //
-  // Browsers clamp scrollTop to scrollHeight, so a naive one-shot
-  // restore at mount-time fails when the body's content (HistoryTab
-  // beats, etc) hasn't laid out yet. Retry through a ResizeObserver
-  // until either the saved offset is reached or the tab is changed.
+  // Restore and persist share one effect on purpose: the ordering
+  // between "save where we were" and "aim at the new tab's offset"
+  // matters, and splitting them makes it hinge on React's
+  // cleanup/setup interleaving between two effects.
   useEffect(() => {
     const body = bodyRef.current;
     if (!body) return;
     const target = scrollMemory.get(tab) ?? 0;
-    const apply = (): void => {
-      if (body.scrollTop !== target) body.scrollTop = target;
-    };
-    apply();
-    // ResizeObserver is missing in jsdom (used by unit tests). The
-    // production fallback is one-shot apply; the test harness doesn't
-    // exercise scroll-restore directly so this is fine.
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => {
-      // Once content has grown enough to host the target scroll,
-      // re-apply. After that the scroll listener takes over.
-      if (body.scrollHeight - body.clientHeight >= target) apply();
-    });
-    observer.observe(body);
-    return () => observer.disconnect();
-  }, [tab]);
+    desiredScrollRef.current = target;
 
-  // Persist scroll position on unmount (for the round-trip case) and
-  // on any scroll event (so the latest position is what gets restored).
-  useEffect(() => {
-    const body = bodyRef.current;
-    if (!body) return;
+    let frame = 0;
+    const clearRestoring = (): void => {
+      restoringRef.current = false;
+    };
+    // Browsers clamp scrollTop to the scrollable range, so a restore
+    // attempted before the body's content (history beats, auto-growing
+    // textareas, images) has laid out silently lands short. ``apply``
+    // reports whether it actually got there.
+    const apply = (): boolean => {
+      if (Math.abs(body.scrollTop - target) > 1) {
+        restoringRef.current = true;
+        body.scrollTop = target;
+        // Scroll events are dispatched in the frame's scroll steps,
+        // which run before animation-frame callbacks — so our own
+        // event has already been swallowed by the time this runs.
+        if (typeof requestAnimationFrame === "function") {
+          cancelAnimationFrame(frame);
+          frame = requestAnimationFrame(clearRestoring);
+        } else {
+          clearRestoring();
+        }
+      }
+      return Math.abs(body.scrollTop - target) <= 1;
+    };
+
     const onScroll = (): void => {
+      if (restoringRef.current) return;
+      desiredScrollRef.current = body.scrollTop;
       scrollMemory.set(tab, body.scrollTop);
     };
     body.addEventListener("scroll", onScroll);
+
+    const reached = apply();
+    // ResizeObserver is missing in jsdom (used by unit tests); there
+    // the one-shot apply above is all we get, which is fine — the unit
+    // suite doesn't exercise scroll restore.
+    let observer: ResizeObserver | undefined;
+    if (!reached && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => {
+        // Retry once the content can host the saved offset, then stop:
+        // past that point the player's own scrolling owns the body.
+        if (body.scrollHeight - body.clientHeight < target) return;
+        if (apply()) observer?.disconnect();
+      });
+      // Watching the body alone only catches its own box changing (a
+      // scrollbar appearing, the window resizing). Content growing
+      // taller changes the children's height, not the body's, so the
+      // children have to be watched too.
+      observer.observe(body);
+      for (const child of Array.from(body.children)) observer.observe(child);
+    }
+
     return () => {
-      scrollMemory.set(tab, body.scrollTop);
+      if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame);
+      restoringRef.current = false;
+      observer?.disconnect();
       body.removeEventListener("scroll", onScroll);
+      scrollMemory.set(tab, desiredScrollRef.current);
     };
   }, [tab]);
 
