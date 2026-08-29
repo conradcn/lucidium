@@ -26,6 +26,7 @@ on:
   push:
     tags: ["v*"]
 
+# Read by default; only the publish job is granted contents: write.
 permissions:
   contents: read
 
@@ -116,3 +117,87 @@ jobs:
             frontend/release/Lucidium-*.AppImage.sha256
           if-no-files-found: error
           retention-days: 30
+
+  # Both build jobs upload to the Actions tab, which is not a place a user
+  # can be sent. This job collects those artefacts onto an actual Releases
+  # page with their checksums.
+  #
+  # The release is created as a DRAFT on purpose: a tag push should not
+  # publish a ~2 GB download to the world with no human in the loop. Review
+  # the notes and the two artefacts, then hit Publish. To make tags publish
+  # unattended, set ``draft: false`` below.
+  publish:
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      # A tag that produced only one of the two platforms is a failed
+      # release, not a partial one — catch it here rather than after
+      # someone has downloaded the half that exists.
+      - name: Verify both platforms present
+        run: |
+          set -euo pipefail
+          ls -lhR artifacts
+          test -f artifacts/Lucidium-Setup.exe             || { echo "Windows installer missing" >&2; exit 1; }
+          ls artifacts/Lucidium-*.AppImage >/dev/null 2>&1             || { echo "Linux AppImage missing" >&2; exit 1; }
+
+      # Re-verify the checksums the build jobs recorded. If an artefact were
+      # corrupted in transit through the artifact store, this is where it
+      # surfaces — before the bytes are attached to a public release.
+      - name: Verify checksums
+        working-directory: artifacts
+        run: |
+          set -euo pipefail
+          for f in *.sha256; do
+            echo "== $f"
+            sha256sum -c "$f"
+          done
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          name: Lucidium ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            artifacts/Lucidium-Setup.exe
+            artifacts/Lucidium-Setup.exe.sha256
+            artifacts/Lucidium-*.AppImage
+            artifacts/Lucidium-*.AppImage.sha256
+          body: |
+            ## Install
+
+            **Windows** — download `Lucidium-Setup.exe` and run it. It is a
+            self-extracting archive, not an installer service; it unpacks the
+            app where you point it.
+
+            **Linux** — download the `.AppImage`, `chmod +x` it, and run it.
+
+            Both bundles are large: they carry the frozen Python engine and a
+            CPU torch overlay so that image generation works offline on first
+            launch. On first run the app downloads an image model matched to
+            your GPU (7-20 GB depending on which one).
+
+            You will also need an API key for an OpenAI-compatible LLM
+            endpoint — Lucidium does not ship an LLM. See the
+            [README](https://github.com/conradcn/lucidium#requirements).
+
+            ## Verifying your download
+
+            Each artefact ships a `.sha256` produced by this build:
+
+            ```
+            sha256sum -c Lucidium-Setup.exe.sha256
+            ```

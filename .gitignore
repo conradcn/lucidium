@@ -79,3 +79,6 @@ backend/krea_renders/
 # local benchmark snapshots
 .bench-before.json
 .bench-after.json
+
+# Local WSL smoke-launch helper (hardcoded developer paths)
+/wsl-check.sh
