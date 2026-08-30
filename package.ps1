@@ -251,9 +251,15 @@ print('downloading to', U2netSession.u2net_home())
 U2netSession.download_models()
 print('done')
 "@
-    $tmp = New-TemporaryFile
-    Rename-Item $tmp.FullName ($tmp.FullName + ".py") -Force
-    $tmpPy = $tmp.FullName + ".py"
+    # Python puts the script's OWN directory on sys.path, so writing a
+    # generated script straight into %TEMP% lets any stray module sitting
+    # there shadow the stdlib -- a leftover ``copy.py`` from an unrelated
+    # tool is enough to kill this step with a FileNotFoundError raised
+    # from inside cv2's bootstrap. Give each generated script its own
+    # empty directory instead.
+    $tmpDir = Join-Path ([IO.Path]::GetTempPath()) ("lucidium-pkg-" + [guid]::NewGuid().ToString("n"))
+    New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+    $tmpPy = Join-Path $tmpDir "step.py"
     Set-Content -Path $tmpPy -Value $script -Encoding utf8
     try {
         & $VenvPython $tmpPy
@@ -261,7 +267,7 @@ print('done')
             throw "u2net.onnx download failed."
         }
     } finally {
-        Remove-Item $tmpPy -ErrorAction SilentlyContinue
+        Remove-Item $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
     }
     if (-not (Test-Path $target)) {
         throw "u2net.onnx still missing after download attempt at $target"
@@ -308,15 +314,21 @@ app = FaceAnalysis(name='buffalo_l', allowed_modules=('detection', 'genderage'))
 app.prepare(ctx_id=-1)
 print('content filter models ready')
 "@
-    $tmp = New-TemporaryFile
-    Rename-Item $tmp.FullName ($tmp.FullName + ".py") -Force
-    $tmpPy = $tmp.FullName + ".py"
+    # Python puts the script's OWN directory on sys.path, so writing a
+    # generated script straight into %TEMP% lets any stray module sitting
+    # there shadow the stdlib -- a leftover ``copy.py`` from an unrelated
+    # tool is enough to kill this step with a FileNotFoundError raised
+    # from inside cv2's bootstrap. Give each generated script its own
+    # empty directory instead.
+    $tmpDir = Join-Path ([IO.Path]::GetTempPath()) ("lucidium-pkg-" + [guid]::NewGuid().ToString("n"))
+    New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+    $tmpPy = Join-Path $tmpDir "step.py"
     Set-Content -Path $tmpPy -Value $script -Encoding utf8
     try {
         & $VenvPython $tmpPy
         if ($LASTEXITCODE -ne 0) { throw "content filter model warm-up failed." }
     } finally {
-        Remove-Item $tmpPy -ErrorAction SilentlyContinue
+        Remove-Item $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
     }
     if (-not (Test-Path (Join-Path $pack "genderage.onnx"))) {
         throw "insightface buffalo_l models still missing under $pack"
