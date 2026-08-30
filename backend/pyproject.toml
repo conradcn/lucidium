@@ -21,7 +21,7 @@ dependencies = [
     # ``Timeout``) plus respx in tests, which tracks httpx itself. If
     # a future httpx release does break us, pin the specific bad
     # release rather than re-adding a rolling ceiling.
-    "httpx>=0.27",
+    "httpx>=0.28.1",
     # Pillow is used by ``orchestration.portrait_post`` to tightly
     # crop the alpha bbox of RMBG-output portraits before saving,
     # and by ``scripts.eval_character_consistency`` to composite
@@ -77,9 +77,9 @@ dependencies = [
     "torchvision>=0.18",
     "transformers>=5,<6",
     "huggingface_hub>=1,<2",
-    "accelerate>=0.30,<2",
+    "accelerate>=1.14.0,<2",
     "rembg[cpu]>=2.0,<3",
-    "safetensors>=0.4,<1",
+    "safetensors>=0.8.0,<1",
     # ``opencv-python-headless`` powers the face-detector that
     # positions the embedded face-detail inpaint pass. Haar
     # cascade XML files ship with the wheel — no extra model
@@ -133,7 +133,7 @@ embedded = []
 # When these aren't installed the prompt-side and storage-side
 # guards still apply but the output-side backstop is inactive.
 safety = [
-    "nudenet>=3.0,<4",
+    "nudenet>=3.4.2,<4",
     "insightface>=1,<2",
 ]
 # Build-time only. ``backend/lucidium.spec`` reaches into PyInstaller
@@ -145,7 +145,7 @@ safety = [
 # ``package.ps1`` and ``scripts/package-linux.sh``. Bump deliberately,
 # and re-run a full package on both platforms when you do.
 packaging = [
-    "pyinstaller==6.21.0",
+    "pyinstaller==6.22.2",
 ]
 
 [project.scripts]
