@@ -555,6 +555,32 @@ GUIMode="0"
     $utf8Bom = New-Object System.Text.UTF8Encoding($true)
     [System.IO.File]::WriteAllText($sfxConfig, $sfxConfigText, $utf8Bom)
 
+    # Stamp the game icon onto the SFX stub BEFORE concatenating. The
+    # 7zSD stub ships with 7-Zip's own icon; rcedit (vendored in
+    # electron-builder's winCodeSign cache) rewrites the exe resource
+    # section -- which discards any appended overlay, so it must run on
+    # the bare stub, never on the finished installer.
+    $iconPath = Join-Path $RepoRoot "icon.ico"
+    if (Test-Path $iconPath) {
+        $rcedit = Get-ChildItem (Join-Path $env:LOCALAPPDATA "electron-builder\Cache\winCodeSign") `
+            -Filter "rcedit-x64.exe" -Recurse -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if ($rcedit) {
+            $stubCopy = Join-Path $distDir "Lucidium-sfx-stub.exe"
+            Copy-Item $sfxStub $stubCopy -Force
+            & $rcedit.FullName $stubCopy --set-icon $iconPath
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "rcedit could not set the installer icon (exit $LASTEXITCODE)."
+                Remove-Item $stubCopy -ErrorAction SilentlyContinue
+            } else {
+                $sfxStub = $stubCopy
+                Write-Host "Installer icon set from icon.ico" -ForegroundColor DarkGray
+            }
+        } else {
+            Write-Warning "rcedit not found in the electron-builder cache; installer keeps the 7-Zip icon."
+        }
+    }
+
     # Concatenate stub + config + archive → final .exe.
     # ``cmd /c copy /b`` is the canonical way to do binary-
     # concatenation on Windows; PowerShell's ``Get-Content``
@@ -565,6 +591,7 @@ GUIMode="0"
         throw "SFX concatenation failed."
     }
     Remove-Item $sfxConfig -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $distDir "Lucidium-sfx-stub.exe") -ErrorAction SilentlyContinue
 
     $size = (Get-Item $exeOut).Length / 1GB
     Write-Host ""

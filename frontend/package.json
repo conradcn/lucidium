@@ -84,7 +84,7 @@
     ],
     "win": {
       "target": "7z",
-      "signAndEditExecutable": false
+      "icon": "../icon.ico"
     },
     "mac": {
       "target": "dmg",
