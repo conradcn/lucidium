@@ -14,6 +14,7 @@ index HTML is canned. We cover:
 from __future__ import annotations
 
 import io
+import os
 import sys
 import zipfile
 from pathlib import Path
@@ -817,3 +818,57 @@ def test_entry_shim_does_not_dispatch_foreign_modules(monkeypatch) -> None:
 def test_entry_shim_normal_launch_is_untouched(monkeypatch) -> None:
     calls = _run_entry_shim(monkeypatch, ["lucidium-backend.exe"])
     assert calls == []
+
+
+# ---------------------------------------------------------------------------
+# Self-spawn re-entrancy guard.
+#
+# The ``-m`` dispatch above closes the one self-spawn path we found; this
+# guard closes the class. A frozen backend that finds the marker in its
+# own environment inherited it from an ancestor backend, which means
+# something is recursing -- so it exits instead of fanning out.
+# ---------------------------------------------------------------------------
+
+
+def test_entry_shim_frozen_sets_reentry_marker(monkeypatch) -> None:
+    monkeypatch.delenv("LUCIDIUM_BACKEND_ACTIVE", raising=False)
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "argv", ["lucidium-backend.exe"])
+    _load_entry_shim()
+    assert os.environ["LUCIDIUM_BACKEND_ACTIVE"] == "1"
+
+
+def test_entry_shim_frozen_refuses_nested_launch(monkeypatch) -> None:
+    """A second frozen backend under an existing one must die immediately
+    rather than start a server that could spawn a third."""
+    monkeypatch.setenv("LUCIDIUM_BACKEND_ACTIVE", "1")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "argv", ["lucidium-backend.exe"])
+    with pytest.raises(SystemExit) as excinfo:
+        _load_entry_shim()
+    assert excinfo.value.code == 3
+
+
+def test_entry_shim_dash_m_child_is_exempt_from_the_guard(monkeypatch) -> None:
+    """The self-test child is spawned BY the server and inherits the
+    marker. It must still run -- the guard only blocks a nested server."""
+    import runpy
+
+    calls: list[str] = []
+    monkeypatch.setattr(runpy, "run_module", lambda m, **k: calls.append(m) or {})
+    monkeypatch.setenv("LUCIDIUM_BACKEND_ACTIVE", "1")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(
+        sys, "argv", ["lucidium-backend.exe", "-m", "lucidium.providers.gpu_selftest"]
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        _load_entry_shim()
+    assert excinfo.value.code == 0
+    assert calls == ["lucidium.providers.gpu_selftest"]
+
+
+def test_entry_shim_unfrozen_dev_run_is_unguarded(monkeypatch) -> None:
+    monkeypatch.setenv("LUCIDIUM_BACKEND_ACTIVE", "1")
+    monkeypatch.delattr(sys, "frozen", raising=False)
+    monkeypatch.setattr(sys, "argv", ["lucidium_pyi_entry.py"])
+    _load_entry_shim()  # must not raise

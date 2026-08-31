@@ -170,6 +170,46 @@ if len(_sys.argv) >= 3 and _sys.argv[1] == "-m" and _sys.argv[2].startswith("luc
     _sys.exit(0)
 
 
+# ---------------------------------------------------------------------------
+# Self-spawn re-entrancy guard (defence in depth).
+#
+# The ``-m`` dispatch above closes the ONE self-spawn path we found the
+# hard way: a frozen build answering ``exe -m lucidium...`` by starting a
+# server, which spawns the same command, which starts a server, 104 deep
+# and ~163 GB of committed memory later the machine is unusable. That
+# fix is specific to ``-m``. This guard is the general one: a backend
+# server NEVER legitimately starts another backend server as its own
+# descendant, so if the marker below is already in the environment we
+# inherited it from an ancestor backend and something is recursing.
+#
+# Refusing here turns an unbounded fan-out into exactly two processes and
+# a diagnosable message on stderr, whatever the spawn path turns out to
+# be next time.
+#
+# Frozen builds only. A dev run is a real python where the operator may
+# legitimately nest interpreters, and the tests spawn ``lucidium.app``
+# children on purpose.
+#
+# Note this is deliberately BELOW the ``-m`` dispatch and the
+# ``LUCIDIUM_CHECK_TORCH`` probe: those are short-lived children the
+# server spawns ON PURPOSE, they exit before reaching this point, and
+# they must keep working.
+# ---------------------------------------------------------------------------
+_REENTRY_MARKER = "LUCIDIUM_BACKEND_ACTIVE"
+
+if getattr(_sys, "frozen", False):
+    if _os.environ.get(_REENTRY_MARKER):
+        print(
+            "lucidium-backend: refusing to start -- a backend server is already "
+            f"running in an ancestor process ({_REENTRY_MARKER} is set). This "
+            "means something spawned the backend from inside the backend; "
+            "refusing prevents an unbounded process fan-out.",
+            file=_sys.stderr,
+        )
+        _sys.exit(3)
+    _os.environ[_REENTRY_MARKER] = "1"
+
+
 from lucidium.app import main  # noqa: E402
 
 if __name__ == "__main__":
