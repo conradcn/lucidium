@@ -139,6 +139,37 @@ if _os.environ.get("LUCIDIUM_CHECK_TORCH"):
         print(f"TORCH_IMPORT_ERROR={_e}")
         _sys.exit(1)
 
+# ---------------------------------------------------------------------------
+# ``-m <module>`` dispatch.
+#
+# The PyInstaller bootloader does NOT interpret CPython's command-line
+# flags. ``lucidium-backend.exe -m lucidium.providers.gpu_selftest`` runs
+# THIS shim and hands ``-m ...`` straight through as ``sys.argv``. Without
+# the dispatch below, the frozen exe answers that invocation by starting
+# the whole server -- which runs the GPU self-test, which spawns
+# ``sys.executable -m lucidium.providers.gpu_selftest``, which starts
+# another server. The recursion is unbounded: a single launch of the
+# packaged build was observed fanning out to 104 lucidium-backend.exe
+# processes holding ~163 GB of committed memory, at which point unrelated
+# work on the machine started failing with "the paging file is too small".
+#
+# Dev runs never hit this -- there ``sys.executable`` is a real python
+# that handles ``-m`` itself -- which is why it only ever showed up in a
+# packaged build.
+#
+# Only ``lucidium.*`` modules are dispatchable. This is an application
+# entry point, not a general-purpose interpreter, and a shipped build
+# should not run an arbitrary module because someone passed a flag.
+# ---------------------------------------------------------------------------
+if len(_sys.argv) >= 3 and _sys.argv[1] == "-m" and _sys.argv[2].startswith("lucidium."):
+    import runpy as _runpy
+
+    _module = _sys.argv[2]
+    _sys.argv = [_module, *_sys.argv[3:]]
+    _runpy.run_module(_module, run_name="__main__", alter_sys=True)
+    _sys.exit(0)
+
+
 from lucidium.app import main  # noqa: E402
 
 if __name__ == "__main__":

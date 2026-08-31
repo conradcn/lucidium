@@ -751,3 +751,69 @@ def test_progress_reports_total_when_known(tmp_path, monkeypatch) -> None:
     )
     assert progress
     assert all(t is not None and t >= d for d, t in progress)
+
+
+# ---------------------------------------------------------------------------
+# ``-m <module>`` dispatch in the frozen entry shim.
+#
+# The PyInstaller bootloader hands ``-m mod`` through as plain argv rather
+# than acting on it, so without this dispatch the frozen exe answers
+# ``lucidium-backend.exe -m lucidium.providers.gpu_selftest`` by starting
+# the server -- which spawns that exact command again, forever. These pin
+# the dispatch and its allowlist.
+# ---------------------------------------------------------------------------
+
+
+def _run_entry_shim(monkeypatch, argv: list[str]) -> list[tuple[str, str]]:
+    """Exec the shim's prefix with ``argv`` in place, recording every
+    ``runpy.run_module`` call instead of really running one."""
+    import runpy
+
+    calls: list[tuple[str, str]] = []
+
+    def _fake_run_module(mod, run_name=None, alter_sys=False):
+        calls.append((mod, run_name))
+        return {}
+
+    monkeypatch.setattr(runpy, "run_module", _fake_run_module)
+    monkeypatch.setattr(sys, "argv", list(argv))
+    _load_entry_shim()
+    return calls
+
+
+def test_entry_shim_dispatches_dash_m_to_runpy(monkeypatch) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        _run_entry_shim(
+            monkeypatch, ["lucidium-backend.exe", "-m", "lucidium.providers.gpu_selftest"]
+        )
+    assert excinfo.value.code == 0
+
+
+def test_entry_shim_dash_m_rewrites_argv_for_the_target(monkeypatch) -> None:
+    """The dispatched module must see the argv CPython would have given
+    it: the module name in slot 0, its own arguments after."""
+    import runpy
+
+    seen: list[list[str]] = []
+    monkeypatch.setattr(runpy, "run_module", lambda *a, **k: seen.append(list(sys.argv)) or {})
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["lucidium-backend.exe", "-m", "lucidium.providers.gpu_selftest", "--flavor", "cpu"],
+    )
+    with pytest.raises(SystemExit):
+        _load_entry_shim()
+    assert seen == [["lucidium.providers.gpu_selftest", "--flavor", "cpu"]]
+
+
+def test_entry_shim_does_not_dispatch_foreign_modules(monkeypatch) -> None:
+    """A shipped build is not a general-purpose interpreter: ``-m`` on
+    anything outside the ``lucidium.`` namespace falls through to the
+    normal launch rather than running the module."""
+    calls = _run_entry_shim(monkeypatch, ["lucidium-backend.exe", "-m", "http.server"])
+    assert calls == []
+
+
+def test_entry_shim_normal_launch_is_untouched(monkeypatch) -> None:
+    calls = _run_entry_shim(monkeypatch, ["lucidium-backend.exe"])
+    assert calls == []
