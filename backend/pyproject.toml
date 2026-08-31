@@ -26,7 +26,7 @@ dependencies = [
     # crop the alpha bbox of RMBG-output portraits before saving,
     # and by ``scripts.eval_character_consistency`` to composite
     # iteration grids.
-    "Pillow>=11,<13",
+    "Pillow>=12.3.0,<13",
     # Embedded image-generation backend ships in the default
     # package so the first-run wizard can default to "Embedded"
     # without forcing the player through a heavyweight install
@@ -118,7 +118,7 @@ dev = [
     # pin behaviour; CI and contributors both resolve to the same
     # latest ruff.
     "ruff>=0.16.5",
-    "mypy>=2,<3",
+    "mypy>=2.3.1,<3",
 ]
 # Historically these were optional; they're now part of the default
 # install so the first-run wizard can default to the embedded
