@@ -134,7 +134,7 @@ embedded = []
 # guards still apply but the output-side backstop is inactive.
 safety = [
     "nudenet>=3.4.2,<4",
-    "insightface>=1,<2",
+    "insightface>=1.0.1,<2",
 ]
 # Build-time only. ``backend/lucidium.spec`` reaches into PyInstaller
 # internals (``PyInstaller.utils.hooks``, ``collect_*`` helpers, the
