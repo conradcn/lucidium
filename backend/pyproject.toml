@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Lucidium Contributors" }]
 dependencies = [
-    "pydantic>=2.6,<3",
+    "pydantic>=2.13.4,<3",
     "websockets>=15,<18",
     # No upper bound: this is a RUNTIME dependency of a library that
     # others install alongside their own httpx pin, and a ``<0.28``
