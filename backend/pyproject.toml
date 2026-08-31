@@ -117,7 +117,7 @@ dev = [
     # ``ruff.toml`` / the ``[tool.ruff]`` block, which is what should
     # pin behaviour; CI and contributors both resolve to the same
     # latest ruff.
-    "ruff>=0.4",
+    "ruff>=0.16.5",
     "mypy>=2,<3",
 ]
 # Historically these were optional; they're now part of the default
