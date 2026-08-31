@@ -26,7 +26,7 @@ dependencies = [
     # crop the alpha bbox of RMBG-output portraits before saving,
     # and by ``scripts.eval_character_consistency`` to composite
     # iteration grids.
-    "Pillow>=11,<13",
+    "Pillow>=12.3.0,<13",
     # Embedded image-generation backend ships in the default
     # package so the first-run wizard can default to "Embedded"
     # without forcing the player through a heavyweight install
