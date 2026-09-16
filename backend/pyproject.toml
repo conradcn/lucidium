@@ -86,7 +86,7 @@ dependencies = [
     # download. The ``-headless`` variant skips Qt / GUI deps
     # which the engine never uses; install size stays modest
     # (~70 MB) and there's no Wayland/X11 friction on Linux.
-    "opencv-python-headless>=5,<6",
+    "opencv-python-headless>=5.0.0.93,<6",
     # ``torchao`` gives native fp8 (e4m3fn) dynamic-activation /
     # weight quantization for the Qwen-Image transformer — it runs the
     # GEMMs on the GPU's fp8 tensor cores via ``torch._scaled_mm``
