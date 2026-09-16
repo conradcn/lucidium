@@ -313,16 +313,30 @@ test.describe("Live LLM 20-move playthrough", () => {
         "character_description", "name",
       ];
       for (const stepName of interviewSteps) {
-        await window
-          .locator(".option-grid button")
+        // The name step renders TWO option grids — pronouns first,
+        // then the generated names. Clicking the first ``.option-grid
+        // button`` there only selects a pronoun (local state, no
+        // submit), so the interview would sit on the step forever.
+        // Scope to the name grid, and pick a pronoun first the way a
+        // player would.
+        const optionGrid =
+          stepName === "name"
+            ? window.locator('[data-testid="name-options"] button')
+            : window.locator(".option-grid button");
+        await optionGrid
           .first()
           .waitFor({ state: "visible", timeout: 120_000 });
         // The slide-away animation briefly disables option
         // buttons mid-swap; wait until they're enabled before
         // clicking.
-        await expect(window.locator(".option-grid button").first())
-          .toBeEnabled({ timeout: 5_000 });
-        await window.locator(".option-grid button").first().click();
+        await expect(optionGrid.first()).toBeEnabled({ timeout: 5_000 });
+        if (stepName === "name") {
+          await window
+            .locator('[data-testid="pronoun-options"] button')
+            .first()
+            .click();
+        }
+        await optionGrid.first().click();
         turnLog.push(`interview ${stepName}: clicked first option`);
         assertNoFatalError(`after interview step ${stepName}`);
       }
