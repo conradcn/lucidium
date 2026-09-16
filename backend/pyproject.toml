@@ -109,7 +109,7 @@ dependencies = [
 dev = [
     "pytest>=9,<10",
     "pytest-asyncio>=1.4,<2",
-    "respx>=0.23,<0.24",
+    "respx>=0.23.1,<0.24",
     # No upper bound: ruff ships lint changes in every minor, and a
     # ``<0.5`` ceiling meant a contributor running current ruff got a
     # different verdict than CI — the failure mode is "clean locally,
