@@ -30,6 +30,12 @@ export default [
     ],
   },
 
+  // Pinned rather than "detect": eslint-plugin-react 7.37 detects the
+  // version through context.getFilename(), which ESLint 10 removed, so
+  // "detect" crashes every react rule. Keep in step with package.json.
+  // Unscoped (no `files`) so every linted file sees it.
+  { settings: { react: { version: "19.2" } } },
+
   js.configs.recommended,
   ...tseslint.configs.recommended,
   react.configs.flat.recommended,
@@ -45,7 +51,6 @@ export default [
       sourceType: "module",
       globals: { ...globals.browser, ...globals.node },
     },
-    settings: { react: { version: "detect" } },
     rules: {
       // ``^_`` is the project-wide "deliberately unused" convention: it
       // covers unused parameters, unused bindings (``for (const _step of

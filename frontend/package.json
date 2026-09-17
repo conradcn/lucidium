@@ -39,13 +39,13 @@
     "@fontsource/quicksand": "^5.3.0",
     "@playwright/test": "^1.63.0",
     "@testing-library/react": "^16.3.2",
-    "@eslint/js": "^9.39.5",
+    "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "^6.1.0",
     "electron": "^44.3.0",
     "electron-builder": "^26.15.3",
-    "eslint": "^9.39.5",
+    "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -93,6 +93,16 @@
     "linux": {
       "target": "AppImage",
       "category": "Game"
+    }
+  },
+  "//overrides": [
+    "eslint-plugin-react 7.37.5 caps its eslint peer at ^9.7 but runs fine",
+    "on eslint 10 once settings.react.version is pinned (see eslint.config.mjs).",
+    "Drop this override when the plugin widens its peer range."
+  ],
+  "overrides": {
+    "eslint-plugin-react": {
+      "eslint": "$eslint"
     }
   }
 }

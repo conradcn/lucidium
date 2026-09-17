@@ -191,6 +191,7 @@ test.describe("Live Surprise Me — character render check", () => {
           + `--- backend tail (last 150 lines) ---\n${tail}\n`
           + `--- end backend tail ---\n`
           + `Underlying: ${err instanceof Error ? err.message : String(err)}`,
+          { cause: err },
         );
       }
 

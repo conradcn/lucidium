@@ -82,7 +82,7 @@ function isPidAlive(pid: number): boolean {
 
 function acquireLiveE2eLock(): void {
   if (existsSync(LIVE_E2E_LOCK_PATH)) {
-    let priorPid: number | null = null;
+    let priorPid: number | null;
     try {
       priorPid = Number.parseInt(
         readFileSync(LIVE_E2E_LOCK_PATH, "utf-8").trim(), 10,
@@ -402,6 +402,7 @@ test.describe("Live LLM 20-move playthrough", () => {
           `main-view never appeared (waited ${elapsed}s after Begin). `
           + `Last visible state: ${lastDiagSummary || "(no snapshot)"}. `
           + `Underlying: ${err instanceof Error ? err.message : String(err)}`,
+          { cause: err },
         );
       }
       turnLog.push("entered main view");

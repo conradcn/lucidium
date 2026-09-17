@@ -151,6 +151,7 @@ test.describe("Live New Game — Add side character", () => {
           + `--- relevant backend lines ---\n${tail || "(none captured)"}\n`
           + `--- end ---\n`
           + `Underlying: ${err instanceof Error ? err.message : String(err)}`,
+          { cause: err },
         );
       }
 

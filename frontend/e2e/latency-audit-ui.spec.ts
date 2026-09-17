@@ -70,7 +70,7 @@ function isPidAlive(pid: number): boolean {
 
 function acquireLiveE2eLock(): void {
   if (existsSync(LIVE_E2E_LOCK_PATH)) {
-    let priorPid: number | null = null;
+    let priorPid: number | null;
     try {
       priorPid = Number.parseInt(
         readFileSync(LIVE_E2E_LOCK_PATH, "utf-8").trim(), 10,
