@@ -213,8 +213,17 @@ async def _run_cancellable(
         don't release ``gpu_lock`` / the inference lock — until the
         worker thread has actually stopped touching the GPU. Returning
         early would hand the lock to the next render while the
-        abandoned one still held VRAM, which is the OOM the lock
-        exists to prevent.
+        abandoned one was still inside the pipeline — two threads on
+        the same tensors, which kills the process with an access
+        violation in ``c10.dll``.
+
+    The wait stays shielded for its whole length. Session teardown
+    routinely cancels a task that is already cancelling (it isn't
+    ``done()`` yet), and the abort can't interrupt a VAE decode, so a
+    second cancel arriving during that decode is the common case, not
+    an edge case. An unshielded ``await future`` there would cancel
+    only the asyncio wrapper — the OS thread keeps running — and
+    unwind immediately.
     """
     abort = threading.Event()
     if _accepts_abort(fn):
@@ -224,10 +233,15 @@ async def _run_cancellable(
         return await asyncio.shield(future)
     except asyncio.CancelledError:
         abort.set()
-        try:
-            await future
-        except BaseException:
-            pass
+        while not future.done():
+            try:
+                await asyncio.shield(future)
+            except asyncio.CancelledError:
+                continue
+            except BaseException:
+                break
+        if not future.cancelled():
+            future.exception()  # retrieve, so it isn't logged as unhandled
         raise
 
 
