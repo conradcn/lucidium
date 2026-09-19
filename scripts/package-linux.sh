@@ -188,11 +188,17 @@ confirm_u2net_cached() {
         return
     fi
     echo "  fetching u2net.onnx (~170 MB) into $u2net_home..."
-    "$VENV_PY" - <<'PY'
+    LUCIDIUM_U2NET_TARGET="$target" "$VENV_PY" - <<'PY'
+import os, shutil
 from rembg.sessions.u2net import U2netSession
-print("downloading to", U2netSession.u2net_home())
-U2netSession.download_models()
-print("done")
+# rembg 2.0.84 downloads into ~/.rembg/models/u2net/ instead of the flat
+# ~/.u2net the spec bundles from; copy whatever it returns into place.
+path = U2netSession.download_models()
+target = os.environ["LUCIDIUM_U2NET_TARGET"]
+if os.path.abspath(path) != os.path.abspath(target):
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    shutil.copyfile(path, target)
+print("done:", target)
 PY
     if [[ ! -f "$target" ]]; then
         echo "u2net.onnx still missing after download attempt at $target" >&2
