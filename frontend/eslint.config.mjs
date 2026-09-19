@@ -34,7 +34,7 @@ export default [
   // version through context.getFilename(), which ESLint 10 removed, so
   // "detect" crashes every react rule. Keep in step with package.json.
   // Unscoped (no `files`) so every linted file sees it.
-  { settings: { react: { version: "19.2" } } },
+  { settings: { react: { version: "19.3" } } },
 
   js.configs.recommended,
   ...tseslint.configs.recommended,
