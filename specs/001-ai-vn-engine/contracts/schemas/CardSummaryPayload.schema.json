@@ -1,0 +1,52 @@
+{
+  "additionalProperties": false,
+  "description": "One card in the library listing.",
+  "properties": {
+    "creator": {
+      "default": "",
+      "title": "Creator",
+      "type": "string"
+    },
+    "file": {
+      "title": "File",
+      "type": "string"
+    },
+    "has_lucidium_data": {
+      "default": false,
+      "title": "Has Lucidium Data",
+      "type": "boolean"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "spec": {
+      "default": "",
+      "title": "Spec",
+      "type": "string"
+    },
+    "summary": {
+      "default": "",
+      "title": "Summary",
+      "type": "string"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "thumbnail_path": {
+      "default": "",
+      "title": "Thumbnail Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "file",
+    "name"
+  ],
+  "title": "CardSummaryPayload",
+  "type": "object"
+}

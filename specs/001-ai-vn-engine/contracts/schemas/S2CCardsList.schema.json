@@ -1,0 +1,102 @@
+{
+  "$defs": {
+    "CardErrorPayload": {
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "title": "File",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "reason"
+      ],
+      "title": "CardErrorPayload",
+      "type": "object"
+    },
+    "CardSummaryPayload": {
+      "additionalProperties": false,
+      "description": "One card in the library listing.",
+      "properties": {
+        "creator": {
+          "default": "",
+          "title": "Creator",
+          "type": "string"
+        },
+        "file": {
+          "title": "File",
+          "type": "string"
+        },
+        "has_lucidium_data": {
+          "default": false,
+          "title": "Has Lucidium Data",
+          "type": "boolean"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "spec": {
+          "default": "",
+          "title": "Spec",
+          "type": "string"
+        },
+        "summary": {
+          "default": "",
+          "title": "Summary",
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "thumbnail_path": {
+          "default": "",
+          "title": "Thumbnail Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "name"
+      ],
+      "title": "CardSummaryPayload",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Reply to ``c2s/cards/list``. ``cards_dir`` is the resolved\nlibrary directory (created if missing); ``errors`` lists card-typed\nfiles that could not be read, so the UI can say why a card is\nmissing instead of silently hiding it.",
+  "properties": {
+    "cards": {
+      "items": {
+        "$ref": "#/$defs/CardSummaryPayload"
+      },
+      "title": "Cards",
+      "type": "array"
+    },
+    "cards_dir": {
+      "title": "Cards Dir",
+      "type": "string"
+    },
+    "errors": {
+      "items": {
+        "$ref": "#/$defs/CardErrorPayload"
+      },
+      "title": "Errors",
+      "type": "array"
+    }
+  },
+  "required": [
+    "cards_dir"
+  ],
+  "title": "S2CCardsList",
+  "type": "object"
+}

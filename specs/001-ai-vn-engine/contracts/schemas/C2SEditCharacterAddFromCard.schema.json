@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "description": "Add a character from the card library to the running story.\nThe card is adapted into a cast member (one LLM call unless it\ncarries a Lucidium export record), placed on stage when\n``on_stage`` is true, and its portrait is queued. Undoable.",
+  "properties": {
+    "file": {
+      "pattern": "^[^/\\\\:\\x00-\\x1f]{1,255}$",
+      "title": "File",
+      "type": "string"
+    },
+    "on_stage": {
+      "default": true,
+      "title": "On Stage",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "file"
+  ],
+  "title": "C2SEditCharacterAddFromCard",
+  "type": "object"
+}

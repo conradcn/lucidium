@@ -37,7 +37,69 @@ The Story panel is the engine's memory, exposed and editable. It tracks a variet
 - Customizable - Downloads an appropriate image model for your GPU automatically, and is compatible with multiple classes of open-weight image models, including fine-tunes from Civitai or similar. It accepts an outside folder as well, so, if you have one, you can just point it at your Automatic1111 or ComfyUI checkpoints directory to avoid maintaining separate collections. Power users can also have it offload rendering to ComfyUI with custom workflows for more flexibility.
 - Music - Generates and plays appropriate music with ACE-STEP (experimental, outside application required, 24GB VRAM recommended)
 
+- Character cards - Bring SillyTavern character cards into a story, and export any character from a story as a new card. See [Character cards](#character-cards) below.
+
 It's compatible with any OpenAI-compatible LLM endpoint (including Ollama). Running it on the same machine as an LLM is not recommended, as the image models need full use of the GPU. For maximum data privacy, enable Zero Data Retention in OpenRouter (or host your own LLM server on a separate machine).
+
+## Character cards
+
+Lucidium reads and writes [SillyTavern](https://sillytavern.app/) character
+cards, so characters can move between the two (and other frontends that use
+the same format).
+
+**Card folder.** Cards are read from one folder, set under **Settings →
+Character cards**. Type a path or use **Browse...** to pick one; **Open**
+shows it in your file manager. Leave it blank to use the default
+`character_cards` folder next to your saves (see
+[docs/operations.md](docs/operations.md) for where that is on each platform).
+To share SillyTavern's library directly, point it at SillyTavern's
+`data/default-user/characters` folder. The settings page shows how many cards
+it found there.
+
+Supported formats:
+
+- `.png` — the usual card image, with the card data embedded (V1, V2 and V3
+  cards).
+- `.json` — a bare card file (V1, V2 or V3, including old Pygmalion/TavernAI
+  field names).
+- `.charx` — the V3 zip container; its icon becomes the avatar.
+
+**Adding a card to a new story.** On the review step of the New Game
+interview, under side characters, press **From card...** to browse your card
+library and add one. Card-sourced characters are marked with a *card* badge.
+When you press **Begin**, each one is adapted to the story's setting along
+with the other side characters.
+
+**Adding a card mid-story.** Open the Story panel's **Characters** tab and
+press **Add from character card...**. Pick a card, and tick **Place on stage
+now** if the character should enter the current scene rather than just
+joining the cast.
+
+On import, one LLM call reads the card (description, personality, scenario,
+lorebook and so on) and turns it into the structured appearance fields
+Lucidium needs to draw a portrait. `{{char}}` / `{{user}}` placeholders are
+filled in with the character's and the player's names. The card itself stays
+attached to the character, so its personality and example dialogue keep
+shaping how the storyteller plays them. Imported characters follow the same content rules as every other
+character (see [Mature content](#mature-content)).
+
+**Exporting a character as a card.** Every character in the **Characters**
+tab has an **Export card** button. It writes a PNG card (carrying both V2
+and V3 data, which current frontends read) into your card folder, using the
+character's latest portrait as the image, and shows where it was saved.
+
+- A character that came from a card exports as that card, under its current
+  name if you renamed them, so nothing from the original is lost.
+- A character the story invented gets a new card built from its description,
+  appearance, known facts and lines it has spoken in the story.
+
+Exported cards also carry a Lucidium extension record. If you import one
+back into Lucidium, the character comes back as they were, without
+re-adapting. Other frontends ignore the record.
+
+Card files are treated as untrusted input: their contents are never
+executed, oversized files are refused, and only files directly inside the
+card folder can be opened.
 
 ## Requirements
 

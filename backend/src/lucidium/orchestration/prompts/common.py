@@ -195,6 +195,7 @@ def render_character_full(character: Character) -> str:
     can have a slumped pose and a thoughtful expression.
     """
     from ...domain.character import CharacterKind
+    from ..card_import import card_prompt_lines
 
     effects = character.effects or "(none)"
     decals = character.decals or "(none)"
@@ -209,6 +210,9 @@ def render_character_full(character: Character) -> str:
         if (character.pronouns or "").strip()
         else ""
     )
+    # Personality + speech sample from an imported SillyTavern card.
+    # Empty for characters the story invented.
+    card_lines = card_prompt_lines(character)
     if character.kind == CharacterKind.nonhuman:
         physical = character.physical_description or "(none)"
         return (
@@ -216,6 +220,7 @@ def render_character_full(character: Character) -> str:
             f"NONHUMAN. DO NOT CONTRADICT in narration or description:\n"
             f"  description: {character.description}\n"
             f"{pronouns_line}"
+            f"{card_lines}"
             f"  physical form: {physical}\n"
             f"  age: {character.age}\n"
             f"  outfit / adornment: {character.outfit or '(none)'}\n"
@@ -229,6 +234,7 @@ def render_character_full(character: Character) -> str:
         f"DO NOT CONTRADICT in narration or description:\n"
         f"  description: {character.description}\n"
         f"{pronouns_line}"
+        f"{card_lines}"
         f"  gender: {character.gender} | age: {character.age} | ethnicity: {character.ethnicity}\n"
         f"  skin: {character.skin} | build: {character.build} | bust: {character.bust}\n"
         f"  hair: {character.hair_color} {character.hairstyle} | eyes: {character.eye_color}\n"

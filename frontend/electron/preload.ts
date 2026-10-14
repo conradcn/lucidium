@@ -11,6 +11,18 @@ const lucidium = {
   getWsToken: async (): Promise<string | null> => {
     return (await ipcRenderer.invoke("lucidium:get-ws-token")) as string | null;
   },
+  /** Open the native folder picker. Resolves to the chosen absolute
+   * path, or ``null`` if the player cancelled. */
+  pickDirectory: async (defaultPath?: string): Promise<string | null> => {
+    return (await ipcRenderer.invoke("lucidium:pick-directory", defaultPath ?? "")) as
+      | string
+      | null;
+  },
+  /** Reveal a directory in the OS file manager. Resolves ``false`` when
+   * the path isn't an existing directory (files are never opened). */
+  openFolder: async (dir: string): Promise<boolean> => {
+    return (await ipcRenderer.invoke("lucidium:open-folder", dir)) as boolean;
+  },
   /** Tear down the backend cleanly and restart the Electron process so
    * the next launch picks up a freshly-installed torch overlay (or
    * any other state that only takes effect at process start). Fire-

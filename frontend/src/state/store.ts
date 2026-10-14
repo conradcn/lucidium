@@ -61,7 +61,7 @@ export interface InterviewState {
   visual_style_options?: string[];
   character_description_options?: string[];
   name_options?: string[];
-  side_characters?: Record<string, { id: string; name: string }>;
+  side_characters?: Record<string, { id: string; name: string; from_card?: boolean }>;
   // Bundled-then-restyled stage assets shown behind the interview
   // questions (FR-027). Path strings come straight from the backend.
   dream_guide_image_path?: string;

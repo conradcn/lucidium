@@ -34,6 +34,7 @@ class MessageType(StrEnum):
     c2s_new_game_start = "c2s/new_game/start"
     c2s_new_game_answer = "c2s/new_game/answer"
     c2s_new_game_add_side_character = "c2s/new_game/add_side_character"
+    c2s_new_game_add_card_character = "c2s/new_game/add_card_character"
     c2s_new_game_edit_side_character = "c2s/new_game/edit_side_character"
     c2s_new_game_delete_side_character = "c2s/new_game/delete_side_character"
     c2s_new_game_edit_review = "c2s/new_game/edit_review"
@@ -49,6 +50,9 @@ class MessageType(StrEnum):
     c2s_edit_character_dismiss = "c2s/edit/character/dismiss"
     c2s_edit_character_show = "c2s/edit/character/show"
     c2s_edit_character_rerender = "c2s/edit/character/rerender"
+    c2s_edit_character_add_from_card = "c2s/edit/character/add_from_card"
+    c2s_edit_character_export_card = "c2s/edit/character/export_card"
+    c2s_cards_list = "c2s/cards/list"
     c2s_edit_history = "c2s/edit/history"
     c2s_edit_history_delete = "c2s/edit/history/delete"
     c2s_edit_history_retcon = "c2s/edit/history/retcon"
@@ -87,6 +91,8 @@ class MessageType(StrEnum):
     s2c_torch_overlay_progress = "s2c/torch_overlay/progress"
     s2c_music_inventory = "s2c/music/inventory"
     s2c_play_cancelled = "s2c/play/cancelled"
+    s2c_cards_list = "s2c/cards/list"
+    s2c_cards_exported = "s2c/cards/exported"
 
 
 class Envelope(BaseModel):
@@ -178,6 +184,25 @@ class C2SNewGameAnswer(BaseModel):
 class C2SNewGameAddSideCharacter(BaseModel):
     model_config = ConfigDict(extra="forbid")
     description: str
+
+
+# A card handle on the wire is a bare file name inside the configured
+# card library — never a path. Same reasoning as ``_SAVE_ID_PATTERN``:
+# rejecting separators, ``:`` (drive letters, NTFS streams) and control
+# characters here means no request can name a file outside the library.
+# ``persistence.character_cards.resolve_card_file`` re-checks after
+# resolution as the second layer.
+_CARD_FILE_PATTERN = r"^[^/\\:\x00-\x1f]{1,255}$"
+
+
+class C2SNewGameAddCardCharacter(BaseModel):
+    """Add a character from the card library as a side character on
+    the Review step. Like a typed side character, the card is adapted
+    into a full cast member when the player presses Begin (instantly,
+    with no LLM call, when the card carries a Lucidium export record)."""
+
+    model_config = ConfigDict(extra="forbid")
+    file: str = Field(pattern=_CARD_FILE_PATTERN)
 
 
 class C2SNewGameEditSideCharacter(BaseModel):
@@ -345,6 +370,35 @@ class C2SEditCharacterRerender(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     character_id: str
+
+
+class C2SEditCharacterAddFromCard(BaseModel):
+    """Add a character from the card library to the running story.
+    The card is adapted into a cast member (one LLM call unless it
+    carries a Lucidium export record), placed on stage when
+    ``on_stage`` is true, and its portrait is queued. Undoable."""
+
+    model_config = ConfigDict(extra="forbid")
+    file: str = Field(pattern=_CARD_FILE_PATTERN)
+    on_stage: bool = True
+
+
+class C2SEditCharacterExportCard(BaseModel):
+    """Write a cast member out as a SillyTavern character card (PNG with
+    V2 + V3 data, the portrait as the avatar) into the card library.
+    Replies with ``s2c/cards/exported``."""
+
+    model_config = ConfigDict(extra="forbid")
+    character_id: str
+
+
+class C2SCardsList(BaseModel):
+    """List the character cards in the configured card library
+    (``Settings.character_cards_dir``). Replies with ``s2c/cards/list``.
+    Takes no directory on purpose: the library is whatever Settings
+    says, so the wire can't point the engine at arbitrary folders."""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class C2SEditHistory(BaseModel):
@@ -796,6 +850,52 @@ class S2CTorchOverlayProgress(BaseModel):
     bytes_total: int | None = None
 
 
+class CardSummaryPayload(BaseModel):
+    """One card in the library listing."""
+
+    model_config = ConfigDict(extra="forbid")
+    # Bare file name — the handle every card action takes.
+    file: str
+    name: str
+    creator: str = ""
+    tags: list[str] = Field(default_factory=list)
+    summary: str = ""
+    spec: str = ""
+    # Scaled-down avatar under the saves root (servable by the asset
+    # protocol); empty when the card has no image.
+    thumbnail_path: str = ""
+    # True when the card carries a Lucidium export record, i.e. it
+    # imports instantly with its exact appearance.
+    has_lucidium_data: bool = False
+
+
+class CardErrorPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    file: str
+    reason: str
+
+
+class S2CCardsList(BaseModel):
+    """Reply to ``c2s/cards/list``. ``cards_dir`` is the resolved
+    library directory (created if missing); ``errors`` lists card-typed
+    files that could not be read, so the UI can say why a card is
+    missing instead of silently hiding it."""
+
+    model_config = ConfigDict(extra="forbid")
+    cards_dir: str
+    cards: list[CardSummaryPayload] = Field(default_factory=list)
+    errors: list[CardErrorPayload] = Field(default_factory=list)
+
+
+class S2CCardsExported(BaseModel):
+    """Reply to ``c2s/edit/character/export_card``."""
+
+    model_config = ConfigDict(extra="forbid")
+    character_id: str
+    file: str
+    path: str
+
+
 # ---------- Side character expansion (used by US5) ----------
 
 
@@ -818,6 +918,7 @@ C2S_PAYLOAD_BY_TYPE: dict[MessageType, type[BaseModel]] = {
     MessageType.c2s_new_game_start: C2SNewGameStart,
     MessageType.c2s_new_game_answer: C2SNewGameAnswer,
     MessageType.c2s_new_game_add_side_character: C2SNewGameAddSideCharacter,
+    MessageType.c2s_new_game_add_card_character: C2SNewGameAddCardCharacter,
     MessageType.c2s_new_game_edit_side_character: C2SNewGameEditSideCharacter,
     MessageType.c2s_new_game_delete_side_character: C2SNewGameDeleteSideCharacter,
     MessageType.c2s_new_game_edit_review: C2SNewGameEditReview,
@@ -833,6 +934,9 @@ C2S_PAYLOAD_BY_TYPE: dict[MessageType, type[BaseModel]] = {
     MessageType.c2s_edit_character_dismiss: C2SEditCharacterDismiss,
     MessageType.c2s_edit_character_show: C2SEditCharacterShow,
     MessageType.c2s_edit_character_rerender: C2SEditCharacterRerender,
+    MessageType.c2s_edit_character_add_from_card: C2SEditCharacterAddFromCard,
+    MessageType.c2s_edit_character_export_card: C2SEditCharacterExportCard,
+    MessageType.c2s_cards_list: C2SCardsList,
     MessageType.c2s_edit_history: C2SEditHistory,
     MessageType.c2s_edit_history_delete: C2SEditHistoryDelete,
     MessageType.c2s_edit_history_retcon: C2SEditHistoryRetcon,
@@ -872,4 +976,6 @@ S2C_PAYLOAD_BY_TYPE: dict[MessageType, type[BaseModel]] = {
     MessageType.s2c_torch_overlay_progress: S2CTorchOverlayProgress,
     MessageType.s2c_music_inventory: S2CMusicInventory,
     MessageType.s2c_play_cancelled: S2CPlayCancelled,
+    MessageType.s2c_cards_list: S2CCardsList,
+    MessageType.s2c_cards_exported: S2CCardsExported,
 }

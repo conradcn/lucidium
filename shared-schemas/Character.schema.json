@@ -1,5 +1,121 @@
 {
   "$defs": {
+    "CharacterCardData": {
+      "additionalProperties": false,
+      "properties": {
+        "alternate_greetings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Alternate Greetings",
+          "type": "array"
+        },
+        "character_book": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Character Book"
+        },
+        "character_version": {
+          "default": "",
+          "title": "Character Version",
+          "type": "string"
+        },
+        "creator": {
+          "default": "",
+          "title": "Creator",
+          "type": "string"
+        },
+        "creator_notes": {
+          "default": "",
+          "title": "Creator Notes",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "title": "Extensions",
+          "type": "object"
+        },
+        "extra_fields": {
+          "additionalProperties": true,
+          "title": "Extra Fields",
+          "type": "object"
+        },
+        "first_mes": {
+          "default": "",
+          "title": "First Mes",
+          "type": "string"
+        },
+        "mes_example": {
+          "default": "",
+          "title": "Mes Example",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "nickname": {
+          "default": "",
+          "title": "Nickname",
+          "type": "string"
+        },
+        "personality": {
+          "default": "",
+          "title": "Personality",
+          "type": "string"
+        },
+        "post_history_instructions": {
+          "default": "",
+          "title": "Post History Instructions",
+          "type": "string"
+        },
+        "scenario": {
+          "default": "",
+          "title": "Scenario",
+          "type": "string"
+        },
+        "source_file": {
+          "default": "",
+          "title": "Source File",
+          "type": "string"
+        },
+        "spec": {
+          "default": "chara_card_v2",
+          "title": "Spec",
+          "type": "string"
+        },
+        "system_prompt": {
+          "default": "",
+          "title": "System Prompt",
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "CharacterCardData",
+      "type": "object"
+    },
     "CharacterImage": {
       "additionalProperties": false,
       "properties": {
@@ -110,6 +226,17 @@
       "default": "",
       "title": "Bust",
       "type": "string"
+    },
+    "card": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CharacterCardData"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "created_at": {
       "format": "date-time",

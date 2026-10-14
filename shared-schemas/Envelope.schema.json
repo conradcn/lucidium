@@ -11,6 +11,7 @@
         "c2s/new_game/start",
         "c2s/new_game/answer",
         "c2s/new_game/add_side_character",
+        "c2s/new_game/add_card_character",
         "c2s/new_game/edit_side_character",
         "c2s/new_game/delete_side_character",
         "c2s/new_game/edit_review",
@@ -26,6 +27,9 @@
         "c2s/edit/character/dismiss",
         "c2s/edit/character/show",
         "c2s/edit/character/rerender",
+        "c2s/edit/character/add_from_card",
+        "c2s/edit/character/export_card",
+        "c2s/cards/list",
         "c2s/edit/history",
         "c2s/edit/history/delete",
         "c2s/edit/history/retcon",
@@ -61,7 +65,9 @@
         "s2c/torch_overlay/status",
         "s2c/torch_overlay/progress",
         "s2c/music/inventory",
-        "s2c/play/cancelled"
+        "s2c/play/cancelled",
+        "s2c/cards/list",
+        "s2c/cards/exported"
       ],
       "title": "MessageType",
       "type": "string"

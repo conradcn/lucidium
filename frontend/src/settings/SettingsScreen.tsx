@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import { ensureClient, send } from "../app/client";
+import { canOpenFolder, canPickDirectory, openFolder, pickDirectory } from "../app/desktopBridge";
 import {
   RelaunchNotice,
   TORCH_FLAVORS,
@@ -1138,6 +1139,10 @@ export function SettingsScreen({ onBack }: Props): JSX.Element {
             </Field>
           </section>
 
+          <CharacterCardsSection
+            configured={String(settings?.["character_cards_dir"] ?? "")}
+          />
+
           <section className="settings-section">
             <h3>Content</h3>
             <label className="settings-field settings-field--checkbox">
@@ -1341,6 +1346,95 @@ export function SettingsScreen({ onBack }: Props): JSX.Element {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Settings → Character cards. The folder the SillyTavern card library
+ * is read from (and exported cards are written to). Commits on
+ * Enter / blur / Browse rather than on every keystroke: each commit
+ * re-scans the folder, and a half-typed path is never useful.
+ */
+function CharacterCardsSection({ configured }: { configured: string }): JSX.Element {
+  const [draft, setDraft] = useState(configured);
+  const [seen, setSeen] = useState(configured);
+  if (seen !== configured) {
+    setSeen(configured);
+    setDraft(configured);
+  }
+  const [library, setLibrary] = useState<{ dir: string; count: number } | null>(null);
+
+  useEffect(() => {
+    const client = ensureClient();
+    const off = client.on("s2c/cards/list", (p) => {
+      setLibrary({ dir: p.cards_dir, count: (p.cards ?? []).length });
+    });
+    return off;
+  }, []);
+  // Scan on mount and again once the backend has a new folder, so the
+  // hint below reflects what the card pickers will show.
+  useEffect(() => {
+    send("c2s/cards/list");
+  }, [configured]);
+
+  const commit = (value: string): void => {
+    const next = value.trim();
+    if (next === configured.trim()) return;
+    send("c2s/settings/update", { patch: { character_cards_dir: next } });
+  };
+
+  const browse = async (): Promise<void> => {
+    const picked = await pickDirectory(draft.trim() || library?.dir || undefined);
+    if (picked) {
+      setDraft(picked);
+      commit(picked);
+    }
+  };
+
+  return (
+    <section className="settings-section" data-testid="character-cards-section">
+      <h3>Character cards</h3>
+      <Field label="Card folder">
+        <div className="settings-inline-row">
+          <input
+            type="text"
+            value={draft}
+            placeholder={
+              library ? `default: ${library.dir}` : "leave blank for the per-user default"
+            }
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => commit(draft)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit(draft);
+            }}
+            data-testid="character-cards-dir"
+          />
+          {canPickDirectory() ? (
+            <button type="button" onClick={() => void browse()}>
+              Browse...
+            </button>
+          ) : null}
+          {canOpenFolder() && library ? (
+            <button type="button" onClick={() => void openFolder(library.dir)}>
+              Open
+            </button>
+          ) : null}
+        </div>
+      </Field>
+      <div className="settings-field-hint">
+        SillyTavern character cards (<code>.png</code>, <code>.json</code>,{" "}
+        <code>.charx</code>) in this folder can be added to a story from the
+        New Game review step or the Characters tab. Point it at SillyTavern’s{" "}
+        <code>data/default-user/characters</code> folder to share its library.
+        Exported characters are saved here too.
+        {library ? (
+          <>
+            {" "}
+            {library.count} card{library.count === 1 ? "" : "s"} found.
+          </>
+        ) : null}
+      </div>
+    </section>
   );
 }
 

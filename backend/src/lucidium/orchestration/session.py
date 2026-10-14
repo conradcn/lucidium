@@ -75,6 +75,11 @@ class InterviewState(BaseModel):
     pronouns: str = ""
     side_character_descriptions: list[str] = []
     side_characters: list[Character] = []
+    # Ids of side characters added from a character card whose LLM
+    # adaptation is still pending (it runs at confirm, like typed
+    # side characters). Card characters NOT listed here were rebuilt
+    # exactly from a Lucidium export record and need no adaptation.
+    pending_card_ids: list[str] = []
     # FR-022: bundled "dream guide" + "white room" presented from the
     # first frame of the interview. Re-rendered in the chosen visual
     # style after the player answers the Visual Style step (FR-027a).

@@ -2,7 +2,10 @@ import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import { assetUrl } from "../../../app/assetUrl";
-import { send } from "../../../app/client";
+import { CardLibrary } from "../../../app/CardLibrary";
+import { ensureClient, send } from "../../../app/client";
+import { canOpenFolder, openFolder } from "../../../app/desktopBridge";
+import { useOptimisticAction } from "../../../app/useOptimisticAction";
 import { useLucidiumStore } from "../../../state/store";
 import { AutoGrowTextarea } from "./AutoGrowTextarea";
 
@@ -199,6 +202,22 @@ export function CharactersTab(): JSX.Element {
   // every render, and this component's game can load or unload
   // while it is mounted.
   const autosaveTimersRef = useRef<Record<string, number>>({});
+  // "Add from card": the add lands as a state/full that grows the
+  // cast, which is what releases the guard.
+  const [showCards, setShowCards] = useState(false);
+  const [onStage, setOnStage] = useState(true);
+  const [cardPending, cardRun] = useOptimisticAction(
+    characters ? Object.keys(characters).length : 0,
+  );
+  // Last export result, shown under that character's buttons.
+  const [exported, setExported] = useState<
+    { characterId: string; path: string } | null
+  >(null);
+  useEffect(() => {
+    return ensureClient().on("s2c/cards/exported", (p) => {
+      setExported({ characterId: p.character_id, path: p.path });
+    });
+  }, []);
   // Flush every pending autosave on unmount so the player's
   // last edit doesn't get dropped when they switch tabs.
   useEffect(() => {
@@ -292,8 +311,46 @@ export function CharactersTab(): JSX.Element {
       send("c2s/edit/character", { character_id: charId, field, value });
     }
   };
+  const exportCard = (charId: string): void => {
+    // Export what the player sees: commit pending field edits first
+    // (the socket is ordered, so the export reads the new values).
+    flushAutosaves(charId);
+    setExported(null);
+    send("c2s/edit/character/export_card", { character_id: charId });
+  };
+
   return (
     <div>
+      <div className="characters-tab__toolbar">
+        <button
+          type="button"
+          onClick={() => setShowCards((v) => !v)}
+          aria-expanded={showCards}
+          data-testid="characters-add-from-card"
+          title="Bring a SillyTavern character card into this story"
+        >
+          {showCards ? "Hide character cards" : "Add from character card..."}
+        </button>
+      </div>
+      {showCards ? (
+        <CardLibrary
+          busy={cardPending}
+          onAdd={(file) =>
+            cardRun(() => {
+              send("c2s/edit/character/add_from_card", { file, on_stage: onStage });
+            })
+          }
+        >
+          <label className="card-library__option">
+            <input
+              type="checkbox"
+              checked={onStage}
+              onChange={(e) => setOnStage(e.target.checked)}
+            />{" "}
+            Place on stage now
+          </label>
+        </CardLibrary>
+      ) : null}
       {sortedCharacters.map((char) => {
         const charDraft = drafts[char.id] ?? {};
         const portrait = char.images?.[0];
@@ -387,7 +444,7 @@ export function CharactersTab(): JSX.Element {
                 }}
               />
             ) : null}
-            {isOpen && !char.is_player ? (
+            {isOpen ? (
               <div
                 style={{
                   display: "flex",
@@ -395,42 +452,70 @@ export function CharactersTab(): JSX.Element {
                   marginBottom: "0.5rem",
                 }}
               >
+                {!char.is_player ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        // Commit any in-flight field edits (e.g. a pose
+                        // the player just typed) BEFORE the rerender, so
+                        // the backend renders the new attributes rather
+                        // than racing the debounced autosave.
+                        flushAutosaves(char.id);
+                        send("c2s/edit/character/rerender", { character_id: char.id });
+                      }}
+                      title="Generate a fresh portrait"
+                    >
+                      Rerender
+                    </button>
+                    {char.removed ? (
+                      <button
+                        onClick={() =>
+                          send("c2s/edit/character/show", { character_id: char.id })
+                        }
+                        title="Bring this character back into the scene"
+                      >
+                        Show
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() =>
+                          send("c2s/edit/character/dismiss", {
+                            character_id: char.id,
+                            reason: "dismissed",
+                          })
+                        }
+                        title="Remove this character from the scene and future turns"
+                      >
+                        Dismiss
+                      </button>
+                    )}
+                  </>
+                ) : null}
                 <button
-                  onClick={() => {
-                    // Commit any in-flight field edits (e.g. a pose
-                    // the player just typed) BEFORE the rerender, so
-                    // the backend renders the new attributes rather
-                    // than racing the debounced autosave.
-                    flushAutosaves(char.id);
-                    send("c2s/edit/character/rerender", { character_id: char.id });
-                  }}
-                  title="Generate a fresh portrait"
+                  onClick={() => exportCard(char.id)}
+                  title="Save this character as a SillyTavern character card (PNG) in your card folder"
                 >
-                  Rerender
+                  Export card
                 </button>
-                {char.removed ? (
-                  <button
-                    onClick={() =>
-                      send("c2s/edit/character/show", { character_id: char.id })
-                    }
-                    title="Bring this character back into the scene"
-                  >
-                    Show
-                  </button>
-                ) : (
-                  <button
-                    onClick={() =>
-                      send("c2s/edit/character/dismiss", {
-                        character_id: char.id,
-                        reason: "dismissed",
-                      })
-                    }
-                    title="Remove this character from the scene and future turns"
-                  >
-                    Dismiss
-                  </button>
-                )}
               </div>
+            ) : null}
+            {isOpen && exported?.characterId === char.id ? (
+              <p className="characters-tab__exported" role="status">
+                Saved card to <code>{exported.path}</code>
+                {canOpenFolder() ? (
+                  <>
+                    {" "}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void openFolder(exported.path.replace(/[\\/][^\\/]*$/, ""))
+                      }
+                    >
+                      Open folder
+                    </button>
+                  </>
+                ) : null}
+              </p>
             ) : null}
             {/* Kind toggle. Sits above the structured fields so the
                 pipeline switch is the FIRST decision the player

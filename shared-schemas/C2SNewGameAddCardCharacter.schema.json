@@ -1,0 +1,16 @@
+{
+  "additionalProperties": false,
+  "description": "Add a character from the card library as a side character on\nthe Review step. Like a typed side character, the card is adapted\ninto a full cast member when the player presses Begin (instantly,\nwith no LLM call, when the card carries a Lucidium export record).",
+  "properties": {
+    "file": {
+      "pattern": "^[^/\\\\:\\x00-\\x1f]{1,255}$",
+      "title": "File",
+      "type": "string"
+    }
+  },
+  "required": [
+    "file"
+  ],
+  "title": "C2SNewGameAddCardCharacter",
+  "type": "object"
+}

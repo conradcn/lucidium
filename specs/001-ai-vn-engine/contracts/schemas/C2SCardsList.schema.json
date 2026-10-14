@@ -1,0 +1,7 @@
+{
+  "additionalProperties": false,
+  "description": "List the character cards in the configured card library\n(``Settings.character_cards_dir``). Replies with ``s2c/cards/list``.\nTakes no directory on purpose: the library is whatever Settings\nsays, so the wire can't point the engine at arbitrary folders.",
+  "properties": {},
+  "title": "C2SCardsList",
+  "type": "object"
+}

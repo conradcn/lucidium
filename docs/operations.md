@@ -21,6 +21,9 @@ saves/
     meta.json                   # name, last_played_at, settings snapshot
     images/
       <hash>.png                # content-addressed assets, deduplicated
+character_cards/                # SillyTavern card library + exported cards;
+                                # default for Settings.character_cards_dir
+                                # when it is empty
 models/
   image/                        # embedded-backend SDXL-family checkpoints
                                 # (.safetensors / .ckpt); default for

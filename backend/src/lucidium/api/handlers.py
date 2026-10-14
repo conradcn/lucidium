@@ -21,6 +21,7 @@ from pydantic import BaseModel, ValidationError
 from ..background import spawn as _spawn_background
 from ..config import PROTOCOL_VERSION, WORLD_INIT_DEADLINE_S
 from ..domain.character import Character
+from ..domain.character_card import CharacterCardData
 from ..domain.dialog import (
     DialogNode,
     DialogNodeState,
@@ -57,8 +58,10 @@ from ..orchestration.session import (
     make_environment,
     random_seed,
 )
-from ..persistence import save_store
+from ..persistence import character_cards, save_store
 from .errors import (
+    ErrorCode,
+    LucidiumError,
     NotFoundError,
     ProviderUnreachableError,
     ProviderValidationError,
@@ -67,8 +70,11 @@ from .errors import (
 )
 from .messages import (
     C2S_PAYLOAD_BY_TYPE,
+    C2SCardsList,
     C2SEditCharacter,
+    C2SEditCharacterAddFromCard,
     C2SEditCharacterDismiss,
+    C2SEditCharacterExportCard,
     C2SEditCharacterRerender,
     C2SEditCharacterShow,
     C2SEditEnvironment,
@@ -78,6 +84,7 @@ from .messages import (
     C2SEditHistoryDelete,
     C2SEditHistoryRetcon,
     C2SEditWorld,
+    C2SNewGameAddCardCharacter,
     C2SNewGameAddSideCharacter,
     C2SNewGameAnswer,
     C2SNewGameConfirm,
@@ -93,11 +100,15 @@ from .messages import (
     C2SSavesLoad,
     C2SSavesRename,
     C2SSettingsUpdate,
+    CardErrorPayload,
+    CardSummaryPayload,
     Envelope,
     ImageKind,
     InterviewStep,
     MessageType,
     PatchOp,
+    S2CCardsExported,
+    S2CCardsList,
     S2CHello,
     S2CImageReady,
     S2CMusicReady,
@@ -1155,6 +1166,78 @@ async def new_game_add_side_character_handler(
     return gen()
 
 
+def _cards_dir(session: Session) -> Path:
+    from ..orchestration.card_import import resolve_cards_dir
+
+    return resolve_cards_dir(session.settings.character_cards_dir, session.saves_root)
+
+
+async def _load_library_card(session: Session, file: str) -> CharacterCardData:
+    """Read one card from the configured library, mapping file-level
+    failures onto the structured errors the renderer understands."""
+    directory = _cards_dir(session)
+    try:
+        path = character_cards.resolve_card_file(directory, file)
+        loaded = await asyncio.to_thread(character_cards.load_card_cached, path)
+    except FileNotFoundError as exc:
+        raise NotFoundError(f"no character card named {file!r} in {directory}") from exc
+    except character_cards.CardError as exc:
+        raise SchemaError(f"{file}: {exc}") from exc
+    except OSError as exc:
+        raise SchemaError(f"{file}: could not read file ({type(exc).__name__})") from exc
+    return loaded.card
+
+
+async def new_game_add_card_character_handler(
+    payload: BaseModel, ctx: HandlerContext
+) -> HandlerResult:
+    """Add a library card as a side character on the Review step.
+
+    Mirrors ``new_game_add_side_character_handler``: no LLM call here.
+    A card Lucidium exported earlier is rebuilt exactly right away;
+    any other card becomes a stub whose adaptation runs at confirm
+    alongside the typed side characters.
+    """
+    from ..orchestration.card_import import (
+        card_stub,
+        character_from_extension,
+        side_character_line,
+    )
+
+    assert isinstance(payload, C2SNewGameAddCardCharacter)
+    card = await _load_library_card(ctx.session, payload.file)
+    interview = ctx.session.interview
+    character = character_from_extension(card)
+    if character is None:
+        character = card_stub(card)
+        interview.pending_card_ids.append(character.id)
+    interview.side_character_descriptions.append(side_character_line(card))
+    interview.side_characters.append(character)
+    _log.info(
+        "add_card_character: %r from %s id=%s (adaptation %s)",
+        card.name,
+        payload.file,
+        character.id,
+        "deferred to confirm" if character.id in interview.pending_card_ids else "not needed",
+    )
+
+    async def gen() -> AsyncIterator[OutboundMessage]:
+        yield (
+            MessageType.s2c_state_patch,
+            S2CStatePatch(
+                ops=[
+                    PatchOp(
+                        op="add",
+                        path=f"/interview/side_characters/{character.id}",
+                        value={"id": character.id, "name": character.name, "from_card": True},
+                    )
+                ]
+            ),
+        )
+
+    return gen()
+
+
 async def new_game_edit_side_character_handler(
     payload: BaseModel, ctx: HandlerContext
 ) -> HandlerResult:
@@ -1177,16 +1260,28 @@ async def new_game_edit_side_character_handler(
             break
     if target_idx is None:
         raise NotFoundError(f"unknown side character {payload.character_id!r}")
-    updated = sides[target_idx].model_copy(
-        update={"name": description, "description": description},
-    )
+    current = sides[target_idx]
+    if current.card is not None:
+        # A card character's row shows only the name, so the edit is a
+        # rename: keep the card's text (and the description built from
+        # it) and carry the new name onto the card too.
+        from ..orchestration.card_import import side_character_line
+
+        card = current.card.model_copy(update={"name": description})
+        updated = current.model_copy(update={"name": description, "card": card})
+        line = side_character_line(card)
+    else:
+        updated = current.model_copy(
+            update={"name": description, "description": description},
+        )
+        line = description
     sides[target_idx] = updated
     # Keep the parallel description list in sync — confirm-time
     # expansion reads from this list when re-running the LLM stub
     # expansion. Without keeping it aligned, an edit would be
     # rendered to the player but lost the moment they pressed Begin.
     if target_idx < len(descs):
-        descs[target_idx] = description
+        descs[target_idx] = line
     _log.info(
         "edit_side_character: id=%s renamed to %r",
         payload.character_id,
@@ -1201,7 +1296,13 @@ async def new_game_edit_side_character_handler(
                     PatchOp(
                         op="replace",
                         path=f"/interview/side_characters/{updated.id}",
-                        value={"id": updated.id, "name": updated.name},
+                        value={
+                            "id": updated.id,
+                            "name": updated.name,
+                            # Only card rows carry the flag, so typed
+                            # rows keep their original patch shape.
+                            **({"from_card": True} if updated.card is not None else {}),
+                        },
                     )
                 ]
             ),
@@ -1231,6 +1332,9 @@ async def new_game_delete_side_character_handler(
     removed = sides.pop(target_idx)
     if target_idx < len(descs):
         descs.pop(target_idx)
+    pending = ctx.session.interview.pending_card_ids
+    if removed.id in pending:
+        pending.remove(removed.id)
     _log.info(
         "delete_side_character: id=%s name=%r (now %d entries)",
         removed.id,
@@ -1510,20 +1614,39 @@ async def new_game_confirm_handler(payload: BaseModel, ctx: HandlerContext) -> H
             strict=False,
         )
     )
-    stubs = [(s, d) for s, d in pairs if not s.outfit]
+    # Card characters are adapted from their card rather than a
+    # one-liner, and only while their adaptation is still pending —
+    # a card rebuilt from a Lucidium export record is already final
+    # even if (say) a nonhuman's outfit is legitimately empty.
+    from ..orchestration.card_import import adapt_card
+
+    pending_cards = set(interview.pending_card_ids)
+
+    def _needs_expansion(side: Character) -> bool:
+        if side.card is not None:
+            return side.id in pending_cards
+        return not side.outfit
+
+    def _expand(side: Character, description: str) -> Coroutine[Any, Any, Character]:
+        if side.card is not None:
+            return adapt_card(
+                ctx.session,
+                side.card,
+                setting=interview.setting,
+                player_name=interview.character_name,
+                base=side,
+            )
+        return _expand_side_character_stub(
+            session=ctx.session,
+            stub=side,
+            description=description,
+            setting=interview.setting,
+        )
+
+    stubs = [(s, d) for s, d in pairs if _needs_expansion(s)]
     expanded_pairs: list[tuple[Character, Character]] = []
     if stubs:
-        expansions = await asyncio.gather(
-            *(
-                _expand_side_character_stub(
-                    session=ctx.session,
-                    stub=s,
-                    description=d,
-                    setting=interview.setting,
-                )
-                for s, d in stubs
-            )
-        )
+        expansions = await asyncio.gather(*(_expand(s, d) for s, d in stubs))
         expanded_pairs = list(zip([s for s, _ in stubs], expansions, strict=True))
     expanded_by_stub_id = {stub.id: exp for stub, exp in expanded_pairs}
     for side in interview.side_characters:
@@ -4861,6 +4984,140 @@ async def edit_character_rerender_handler(payload: BaseModel, ctx: HandlerContex
     return gen()
 
 
+async def edit_character_add_from_card_handler(
+    payload: BaseModel, ctx: HandlerContext
+) -> HandlerResult:
+    """Bring a library card into the running story as a new cast member.
+
+    The adaptation LLM call runs before anything is mutated, so a
+    provider failure leaves the game untouched. The game is re-read
+    after that await — a turn may have landed meanwhile — and the add
+    itself is a single undoable step, like Show."""
+    from ..orchestration.card_import import adapt_card
+
+    assert isinstance(payload, C2SEditCharacterAddFromCard)
+    if ctx.session.game is None:
+        raise NotFoundError("no game loaded")
+    card = await _load_library_card(ctx.session, payload.file)
+    before = ctx.session.game
+    player = next((c for c in before.characters.values() if c.is_player), None)
+    character = await adapt_card(
+        ctx.session,
+        card,
+        setting=before.world.setting,
+        player_name=player.name if player is not None else "",
+    )
+    game = ctx.session.game
+    if game is None:
+        raise NotFoundError("no game loaded")
+    _push_undo_snapshot(ctx.session)
+    new_chars = dict(game.characters)
+    new_chars[character.id] = character
+    new_on_stage = list(game.on_stage)
+    if payload.on_stage and character.id not in new_on_stage:
+        new_on_stage.append(character.id)
+    ctx.session.install_game(
+        game.model_copy(update={"characters": new_chars, "on_stage": new_on_stage})
+    )
+    await ctx.session.commit()
+    _log.info(
+        "add_from_card: %r from %s as id=%s on_stage=%s",
+        character.name,
+        payload.file,
+        character.id,
+        payload.on_stage,
+    )
+    # Queue the first portrait now rather than waiting for the next
+    # turn's asset pass, so the Cast tab (and the stage, when on stage)
+    # fills in as soon as the GPU gets to it.
+    ctx.session.render_scheduler.request_redraw(character.id)
+
+    async def gen() -> AsyncIterator[OutboundMessage]:
+        yield (MessageType.s2c_state_full, _full_state_message(ctx.session))
+
+    return gen()
+
+
+async def edit_character_export_card_handler(
+    payload: BaseModel, ctx: HandlerContext
+) -> HandlerResult:
+    """Write a cast member to the card library as a V2 + V3 PNG card."""
+    from ..orchestration.card_import import card_from_character, portrait_bytes
+
+    assert isinstance(payload, C2SEditCharacterExportCard)
+    game = ctx.session.game
+    if game is None:
+        raise NotFoundError("no game loaded")
+    char = game.characters.get(payload.character_id)
+    if char is None:
+        raise NotFoundError(f"unknown character {payload.character_id}")
+    card = card_from_character(char, game)
+    avatar = await asyncio.to_thread(portrait_bytes, char)
+    directory = _cards_dir(ctx.session)
+    try:
+        directory.mkdir(parents=True, exist_ok=True)
+        dest = character_cards.safe_card_filename(char.name, directory)
+        await asyncio.to_thread(character_cards.write_png_card, dest, card, avatar)
+    except OSError as exc:
+        raise LucidiumError(
+            ErrorCode.internal,
+            f"Could not write the character card to {directory}: {exc.strerror or exc}",
+        ) from exc
+    _log.info("export_card: %r -> %s", char.name, dest)
+
+    async def gen() -> AsyncIterator[OutboundMessage]:
+        yield (
+            MessageType.s2c_cards_exported,
+            S2CCardsExported(character_id=char.id, file=dest.name, path=str(dest)),
+        )
+
+    return gen()
+
+
+async def cards_list_handler(payload: BaseModel, ctx: HandlerContext) -> HandlerResult:
+    """List the card library. Creates the folder on first use so the
+    player has somewhere to drop cards."""
+    from ..domain.character_card import LUCIDIUM_EXTENSION_KEY
+    from ..orchestration.card_import import CARD_THUMBNAIL_DIRNAME, card_summary
+
+    assert isinstance(payload, C2SCardsList)
+    directory = _cards_dir(ctx.session)
+    errors: list[CardErrorPayload] = []
+    try:
+        directory.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        errors.append(
+            CardErrorPayload(file="", reason=f"cannot open folder: {exc.strerror or exc}")
+        )
+    entries, failures = await asyncio.to_thread(
+        character_cards.list_library,
+        directory,
+        thumbnail_dir=ctx.session.saves_root / CARD_THUMBNAIL_DIRNAME,
+    )
+    errors += [CardErrorPayload(file=f, reason=r) for f, r in failures]
+    cards = [
+        CardSummaryPayload(
+            file=e.file,
+            name=e.card.name,
+            creator=e.card.creator,
+            tags=e.card.tags[:12],
+            summary=card_summary(e.card),
+            spec=e.card.spec,
+            thumbnail_path=str(e.thumbnail) if e.thumbnail is not None else "",
+            has_lucidium_data=isinstance(e.card.extensions.get(LUCIDIUM_EXTENSION_KEY), dict),
+        )
+        for e in entries
+    ]
+
+    async def gen() -> AsyncIterator[OutboundMessage]:
+        yield (
+            MessageType.s2c_cards_list,
+            S2CCardsList(cards_dir=str(directory), cards=cards, errors=errors),
+        )
+
+    return gen()
+
+
 async def edit_history_handler(payload: BaseModel, ctx: HandlerContext) -> HandlerResult:
     assert isinstance(payload, C2SEditHistory)
     if ctx.session.game is None:
@@ -6109,6 +6366,9 @@ def build_default_registry() -> HandlerRegistry:
         MessageType.c2s_new_game_delete_side_character,
         new_game_delete_side_character_handler,
     )
+    registry.register(
+        MessageType.c2s_new_game_add_card_character, new_game_add_card_character_handler
+    )
     registry.register(MessageType.c2s_new_game_edit_review, new_game_edit_review_handler)
     registry.register(MessageType.c2s_new_game_confirm, new_game_confirm_handler)
     registry.register(MessageType.c2s_new_game_go_back, new_game_go_back_handler)
@@ -6122,6 +6382,13 @@ def build_default_registry() -> HandlerRegistry:
     registry.register(MessageType.c2s_edit_character_dismiss, edit_character_dismiss_handler)
     registry.register(MessageType.c2s_edit_character_show, edit_character_show_handler)
     registry.register(MessageType.c2s_edit_character_rerender, edit_character_rerender_handler)
+    registry.register(
+        MessageType.c2s_edit_character_add_from_card, edit_character_add_from_card_handler
+    )
+    registry.register(
+        MessageType.c2s_edit_character_export_card, edit_character_export_card_handler
+    )
+    registry.register(MessageType.c2s_cards_list, cards_list_handler)
     registry.register(MessageType.c2s_edit_history, edit_history_handler)
     registry.register(MessageType.c2s_edit_history_delete, edit_history_delete_handler)
     registry.register(MessageType.c2s_edit_history_retcon, edit_history_retcon_handler)

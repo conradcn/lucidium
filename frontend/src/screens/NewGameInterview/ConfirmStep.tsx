@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 
+import { CardLibrary } from "../../app/CardLibrary";
 import { send } from "../../app/client";
 import { useOptimisticAction } from "../../app/useOptimisticAction";
 
@@ -11,18 +12,20 @@ interface InterviewSnapshot {
   character_description?: string;
   character_name?: string;
   pronouns?: string;
-  side_characters?: Record<string, { id: string; name: string }>;
+  side_characters?: Record<string, { id: string; name: string; from_card?: boolean }>;
 }
 
 interface SideCharacterRowProps {
   id: string;
   name: string;
+  fromCard: boolean;
   disabled: boolean;
 }
 
 function SideCharacterRow({
   id,
   name,
+  fromCard,
   disabled,
 }: SideCharacterRowProps): JSX.Element {
   const [draft, setDraft] = useState(name);
@@ -80,6 +83,14 @@ function SideCharacterRow({
         disabled={disabled || pending}
         aria-label={`Side character name (${name})`}
       />
+      {fromCard ? (
+        <span
+          className="side-character-row__card"
+          title="Added from a character card — it is adapted to this story when you press Begin"
+        >
+          card
+        </span>
+      ) : null}
       <button
         type="button"
         onClick={onDelete}
@@ -143,6 +154,10 @@ export function ConfirmStep({
   // characters list changes (which happens when the backend
   // acknowledges via a state/patch).
   const [addPending, addRun] = useOptimisticAction(sideCharacters.length);
+  // Card adds resolve the same way (the list grows), on their own
+  // guard so a slow card read never locks the typed Add button.
+  const [cardPending, cardRun] = useOptimisticAction(sideCharacters.length);
+  const [showCards, setShowCards] = useState(false);
   // Local drafts for review-screen edits. Each editable field
   // holds its in-flight typed value; on save the draft clears
   // and the displayed value falls back to the snapshot
@@ -244,6 +259,12 @@ export function ConfirmStep({
     });
   };
 
+  const addCard = (file: string): void => {
+    cardRun(() => {
+      send("c2s/new_game/add_card_character", { file });
+    });
+  };
+
   const confirm = (): void => {
     run(() => {
       // Flush any debounced field edits BEFORE confirming so
@@ -336,6 +357,7 @@ export function ConfirmStep({
                 key={side.id}
                 id={side.id}
                 name={side.name}
+                fromCard={side.from_card === true}
                 disabled={committed}
               />
             ))}
@@ -356,7 +378,20 @@ export function ConfirmStep({
           >
             Add
           </button>
+          <button
+            type="button"
+            onClick={() => setShowCards((v) => !v)}
+            disabled={committed}
+            aria-expanded={showCards}
+            data-testid="side-character-from-card"
+            title="Add a SillyTavern character card from your card library"
+          >
+            {showCards ? "Hide cards" : "From card..."}
+          </button>
         </div>
+        {showCards && !committed ? (
+          <CardLibrary onAdd={addCard} busy={cardPending} />
+        ) : null}
         <div className="confirm-actions" style={{ marginTop: "1rem" }}>
           <button
             type="button"

@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "Write a cast member out as a SillyTavern character card (PNG with\nV2 + V3 data, the portrait as the avatar) into the card library.\nReplies with ``s2c/cards/exported``.",
+  "properties": {
+    "character_id": {
+      "title": "Character Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "character_id"
+  ],
+  "title": "C2SEditCharacterExportCard",
+  "type": "object"
+}

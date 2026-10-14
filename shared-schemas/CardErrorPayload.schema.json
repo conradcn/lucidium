@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "file": {
+      "title": "File",
+      "type": "string"
+    },
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "file",
+    "reason"
+  ],
+  "title": "CardErrorPayload",
+  "type": "object"
+}

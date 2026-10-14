@@ -294,6 +294,11 @@
     "audio": {
       "$ref": "#/$defs/AudioSettings"
     },
+    "character_cards_dir": {
+      "default": "",
+      "title": "Character Cards Dir",
+      "type": "string"
+    },
     "concurrency": {
       "$ref": "#/$defs/ConcurrencyLimits"
     },

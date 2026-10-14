@@ -1,8 +1,11 @@
 {
   "c2s": {
     "c2s/app/exit": "C2SAppExit",
+    "c2s/cards/list": "C2SCardsList",
     "c2s/edit/character": "C2SEditCharacter",
+    "c2s/edit/character/add_from_card": "C2SEditCharacterAddFromCard",
     "c2s/edit/character/dismiss": "C2SEditCharacterDismiss",
+    "c2s/edit/character/export_card": "C2SEditCharacterExportCard",
     "c2s/edit/character/rerender": "C2SEditCharacterRerender",
     "c2s/edit/character/show": "C2SEditCharacterShow",
     "c2s/edit/environment": "C2SEditEnvironment",
@@ -18,6 +21,7 @@
     "c2s/hello": "C2SHello",
     "c2s/music/inventory": "C2SMusicInventory",
     "c2s/music/regenerate": "C2SMusicRegenerate",
+    "c2s/new_game/add_card_character": "C2SNewGameAddCardCharacter",
     "c2s/new_game/add_side_character": "C2SNewGameAddSideCharacter",
     "c2s/new_game/answer": "C2SNewGameAnswer",
     "c2s/new_game/confirm": "C2SNewGameConfirm",
@@ -43,6 +47,8 @@
     "c2s/torch_overlay/status": "C2STorchOverlayStatus"
   },
   "s2c": {
+    "s2c/cards/exported": "S2CCardsExported",
+    "s2c/cards/list": "S2CCardsList",
     "s2c/cost": "S2CCost",
     "s2c/embedded/download_progress": "S2CEmbeddedDownloadProgress",
     "s2c/embedded/models": "S2CEmbeddedModels",

@@ -2352,3 +2352,138 @@ textarea.review-edit-input::-webkit-scrollbar {
 .model-guidance__error {
   color: var(--accent-warning, #c97a3a);
 }
+
+/* ---- SillyTavern character-card library (CardLibrary.tsx) ----
+   Shared by the New Game review step and the Characters tab. A
+   scrolling list of compact rows: avatar, name + meta, Add button. */
+.card-library {
+  margin-top: 0.75rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--border) 25%, transparent);
+}
+
+.card-library__toolbar,
+.characters-tab__toolbar,
+.settings-inline-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.card-library__toolbar input,
+.settings-inline-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.characters-tab__toolbar {
+  margin-bottom: 0.5rem;
+}
+
+.card-library__dir,
+.card-library__empty,
+.card-library__status,
+.characters-tab__exported {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 0.4rem 0;
+  overflow-wrap: anywhere;
+}
+
+.card-library__error {
+  color: var(--accent-warning, #c97a3a);
+  font-size: 0.85rem;
+  margin: 0.4rem 0;
+}
+
+.card-library__option {
+  display: block;
+  font-size: 0.85rem;
+  margin: 0.4rem 0;
+}
+
+.card-library__grid {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  max-height: 22rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.card-library__card {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.35rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+}
+
+.card-library__thumb {
+  width: 3rem;
+  height: 4.5rem;
+  object-fit: cover;
+  border-radius: 3px;
+  flex: none;
+}
+
+.card-library__thumb--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--border);
+  color: var(--muted);
+  font-size: 1.3rem;
+}
+
+.card-library__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-library__name {
+  font-weight: 600;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.card-library__badge,
+.side-character-row__card {
+  font-size: 0.65rem;
+  font-weight: normal;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--accent) 60%, transparent);
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.card-library__meta {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.card-library__summary {
+  font-size: 0.8rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-library__add {
+  flex: none;
+}
+
+.card-library__failures {
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}

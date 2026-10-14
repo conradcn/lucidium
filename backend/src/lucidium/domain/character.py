@@ -7,6 +7,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .character_card import CharacterCardData
 from .ids import new_id
 
 
@@ -177,6 +178,11 @@ class Character(BaseModel):
     # if the player removed them from the characters panel; empty
     # string when ``removed`` is False.
     removed_reason: str = ""
+    # The SillyTavern character card this character was imported
+    # from, kept whole so the personality / example dialogue can
+    # inform the storyteller and so an export round-trips every field
+    # the card carried. ``None`` for characters the story invented.
+    card: CharacterCardData | None = None
 
 
 _AGE_WORDS: tuple[str, ...] = (

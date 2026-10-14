@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, net, protocol, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
 import { spawn, type ChildProcessByStdio } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -524,6 +524,33 @@ async function createWindow(): Promise<void> {
 
 ipcMain.handle("lucidium:get-ws-port", () => backendPort);
 ipcMain.handle("lucidium:get-ws-token", () => backendToken);
+
+// Native folder picker (Settings → Character cards folder). Returns the
+// chosen absolute path, or null when the player cancels.
+ipcMain.handle("lucidium:pick-directory", async (event, defaultPath: unknown) => {
+  const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow;
+  const options: Electron.OpenDialogOptions = {
+    properties: ["openDirectory", "createDirectory"],
+    ...(typeof defaultPath === "string" && defaultPath ? { defaultPath } : {}),
+  };
+  const result = owner
+    ? await dialog.showOpenDialog(owner, options)
+    : await dialog.showOpenDialog(options);
+  return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
+});
+
+// Reveal a folder in the OS file manager (the card library's "Open
+// folder" button). Directories only: ``shell.openPath`` on a file would
+// LAUNCH it, and the renderer must never be able to run a program.
+ipcMain.handle("lucidium:open-folder", async (_event, dir: unknown) => {
+  if (typeof dir !== "string" || !path.isAbsolute(dir)) return false;
+  try {
+    if (!(await fs.promises.stat(dir)).isDirectory()) return false;
+  } catch {
+    return false;
+  }
+  return (await shell.openPath(dir)) === "";
+});
 
 // Renderer-initiated relaunch. Fired when the torch overlay auto-
 // provisioner activates a new wheel — the running Python sidecar has

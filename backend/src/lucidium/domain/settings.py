@@ -510,3 +510,9 @@ class Settings(BaseModel):
     # matter of clearing the flag from the Settings screen — the
     # engine never auto-resets it.
     first_time_setup_complete: bool = False
+    # Folder holding the player's SillyTavern character cards (``.png``
+    # / ``.json`` / ``.charx``). Cards listed here can be added to a
+    # story, and exported characters are written here. Empty means
+    # ``<app-data>/character_cards`` — see
+    # ``orchestration.card_import.resolve_cards_dir``.
+    character_cards_dir: str = ""

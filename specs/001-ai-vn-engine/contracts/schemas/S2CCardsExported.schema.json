@@ -1,0 +1,25 @@
+{
+  "additionalProperties": false,
+  "description": "Reply to ``c2s/edit/character/export_card``.",
+  "properties": {
+    "character_id": {
+      "title": "Character Id",
+      "type": "string"
+    },
+    "file": {
+      "title": "File",
+      "type": "string"
+    },
+    "path": {
+      "title": "Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "character_id",
+    "file",
+    "path"
+  ],
+  "title": "S2CCardsExported",
+  "type": "object"
+}
