@@ -2,6 +2,13 @@
 
 Lucidium is an infinite AI-driven visual novel that runs on your machine. It combines local image models and cloud-hosted open source LLM's to run easily and privately on most computers with at least 8GB of VRAM.
 
+<p align="center">
+  <a href="Screenshots/lucidium-trailer.mp4">
+    <img src="Screenshots/lucidium-trailer.jpg" alt="Watch the trailer: four stories in four art styles — a Ghibli-watercolor greenhouse, a 1977 Kodachrome subway office, a comic-book suburb and a moonlit frozen fairground — with a play button in the centre." width="800">
+  </a>
+  <br>
+  <em>▶ Watch the 46-second trailer — every line written live, every scene painted as you play.</em>
+</p>
 
 ## Screenshots
 
