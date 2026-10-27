@@ -192,27 +192,35 @@ def test_inpaint_cache_isolated_per_pipeline(
 # ---------- VAE memory optimization pin -------------------------------------
 
 
-class _PipelineWithVaeOpts:
-    """Stub that records every VAE optimization toggle call so
+class _VaeWithOpts:
+    """Stub VAE that records every optimization toggle call so
     tests can assert idempotency + shape."""
 
     def __init__(self) -> None:
-        self.vae = object()
         self.tiling_calls = 0
         self.slicing_calls = 0
 
-    def enable_vae_tiling(self) -> None:
+    def enable_tiling(self) -> None:
         self.tiling_calls += 1
 
-    def enable_vae_slicing(self) -> None:
+    def enable_slicing(self) -> None:
         self.slicing_calls += 1
+
+
+class _PipelineWithVaeOpts:
+    """Pipeline shaped like diffusers >= 0.40: the toggles live on
+    the VAE only — the pipeline-level ``enable_vae_tiling`` /
+    ``enable_vae_slicing`` wrappers were removed."""
+
+    def __init__(self) -> None:
+        self.vae = _VaeWithOpts()
 
 
 def test_apply_vae_memory_optimizations_enables_both_toggles() -> None:
     pipeline = _PipelineWithVaeOpts()
     _apply_vae_memory_optimizations(pipeline)
-    assert pipeline.tiling_calls == 1
-    assert pipeline.slicing_calls == 1
+    assert pipeline.vae.tiling_calls == 1
+    assert pipeline.vae.slicing_calls == 1
     assert getattr(pipeline, _VAE_MEMORY_OPT_ATTR) is True
 
 
@@ -224,18 +232,18 @@ def test_apply_vae_memory_optimizations_is_idempotent() -> None:
     pipeline = _PipelineWithVaeOpts()
     for _ in range(10):
         _apply_vae_memory_optimizations(pipeline)
-    assert pipeline.tiling_calls == 1
-    assert pipeline.slicing_calls == 1
+    assert pipeline.vae.tiling_calls == 1
+    assert pipeline.vae.slicing_calls == 1
 
 
 def test_apply_vae_memory_optimizations_handles_missing_methods() -> None:
-    """An older diffusers release without ``enable_vae_tiling``
-    must NOT crash the pipeline factory — the optimization is a
+    """A VAE without ``enable_tiling`` / ``enable_slicing`` must
+    NOT crash the pipeline factory — the optimization is a
     nice-to-have, not a hard requirement."""
 
     class _OldPipeline:
         vae = object()
-        # Neither enable_vae_tiling nor enable_vae_slicing.
+        # Neither enable_tiling nor enable_slicing on the VAE.
 
     # No exception expected.
     _apply_vae_memory_optimizations(_OldPipeline())
