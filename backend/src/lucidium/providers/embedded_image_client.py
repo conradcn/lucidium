@@ -4104,12 +4104,12 @@ def _apply_vae_memory_optimizations(pipeline: Any) -> None:
     activation peak can push a 24 GiB card into OOM territory
     when paired with a music model on the same GPU.
 
-    Diffusers exposes two cheap, lossless toggles:
+    Diffusers exposes two cheap, lossless toggles on the VAE:
 
-      * ``enable_vae_slicing`` — decode batched latents one-by-
+      * ``vae.enable_slicing`` — decode batched latents one-by-
         one instead of all at once. Free for batch_size=1 (our
         case), but harmless to enable.
-      * ``enable_vae_tiling`` — split VAE decode into overlapping
+      * ``vae.enable_tiling`` — split VAE decode into overlapping
         tiles. Cuts peak VRAM during decode by ~3× at the cost
         of barely-perceptible seam artefacts that the rembg cut
         + face composite step blur out anyway.
@@ -4126,10 +4126,13 @@ def _apply_vae_memory_optimizations(pipeline: Any) -> None:
     if vae is None:
         return
     try:
-        if hasattr(pipeline, "enable_vae_tiling"):
-            pipeline.enable_vae_tiling()
-        if hasattr(pipeline, "enable_vae_slicing"):
-            pipeline.enable_vae_slicing()
+        # Call the VAE-level API: diffusers 0.40 removed the pipeline-level
+        # ``enable_vae_tiling`` / ``enable_vae_slicing`` wrappers, so a
+        # ``hasattr(pipeline, ...)`` guard silently skipped both toggles.
+        for meth in ("enable_tiling", "enable_slicing"):
+            fn = getattr(vae, meth, None)
+            if callable(fn):
+                fn()
     except Exception:
         _log.warning(
             "embedded backend: failed to enable VAE memory optimizations; "
