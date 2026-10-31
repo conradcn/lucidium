@@ -19,6 +19,7 @@ Covers two paths:
 
 from __future__ import annotations
 
+import pytest
 from PIL import Image
 
 from lucidium.providers.embedded_image_client import (
@@ -56,6 +57,19 @@ def test_face_detection_returns_none_when_opencv_missing(
         else:
             sys.modules.pop("cv2", None)
     assert result is None
+
+
+def test_installed_opencv_ships_haar_cascade() -> None:
+    """The installed opencv must still provide the Haar cascade API
+    and its XML data. OpenCV 5 dropped both; detection caught the
+    AttributeError and returned no faces, silently disabling the
+    face-detail pass (#74). Fail loudly here instead."""
+    cv2 = pytest.importorskip("cv2")
+    assert hasattr(cv2, "CascadeClassifier"), (
+        f"opencv {cv2.__version__} has no CascadeClassifier; keep opencv-python-headless below 5"
+    )
+    path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+    assert not cv2.CascadeClassifier(path).empty(), f"haar cascade XML missing or empty at {path}"
 
 
 def test_estimate_face_dimensions_full_body_gives_small_face() -> None:

@@ -59,6 +59,12 @@ updates:
       - dependency-name: "torchaudio"
       - dependency-name: "torchao"
       - dependency-name: "diffusers"
+      # OpenCV 5 removed the Haar cascade API the face detector uses
+      # (#74). Lift once detection moves off CascadeClassifier.
+      - dependency-name: "opencv-python-headless"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "opencv-python"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-minor-patch:
         dependency-type: "development"

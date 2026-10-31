@@ -3840,12 +3840,12 @@ def _detect_face_bboxes(
 
     if _HAAR_CASCADE is None:
         try:
-            # cv2's bundled stubs omit ``data`` and ``CascadeClassifier``.
+            # cv2's bundled stubs omit ``data``.
             cascade_path = (
                 cv2.data.haarcascades  # type: ignore[attr-defined]
                 + "haarcascade_frontalface_default.xml"
             )
-            cascade = cv2.CascadeClassifier(cascade_path)  # type: ignore[attr-defined]
+            cascade = cv2.CascadeClassifier(cascade_path)
             if cascade.empty():
                 _log.warning(
                     "face-detail: opencv haar cascade XML loaded empty",
