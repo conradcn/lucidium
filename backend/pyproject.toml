@@ -167,6 +167,9 @@ packages = ["src/lucidium"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+# pytest-asyncio >=1.4.1 warns (an error under ``filterwarnings``
+# below) when this is unset. Every fixture here is function-scoped.
+asyncio_default_fixture_loop_scope = "function"
 # Default: exclude tests marked ``live`` (real LLM + ComfyUI) and
 # ``embedded_live`` (real diffusers pipeline against an installed
 # checkpoint). Both take many minutes per run and need external
