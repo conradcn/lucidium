@@ -88,7 +88,10 @@ dependencies = [
     # download. The ``-headless`` variant skips Qt / GUI deps
     # which the engine never uses; install size stays modest
     # (~70 MB) and there's no Wayland/X11 friction on Linux.
-    "opencv-python-headless>=5.0.0.93,<6",
+    # Held below 5: OpenCV 5 dropped ``cv2.CascadeClassifier`` and
+    # the bundled ``haarcascade_*.xml`` files, which silently
+    # disabled the face-detail pass (#74).
+    "opencv-python-headless>=4.14.0.94,<5",
     # ``torchao`` gives native fp8 (e4m3fn) dynamic-activation /
     # weight quantization for the Qwen-Image transformer — it runs the
     # GEMMs on the GPU's fp8 tensor cores via ``torch._scaled_mm``
@@ -137,6 +140,11 @@ embedded = []
 safety = [
     "nudenet>=3.4.2,<4",
     "insightface>=2.1,<3",
+    # insightface pulls the non-headless ``opencv-python``, which
+    # shares the ``cv2`` package dir with the headless wheel. Left
+    # unpinned it resolves to 5.x and can overwrite the Haar cascade
+    # API the face-detail pass needs (#74).
+    "opencv-python<5",
 ]
 # Build-time only. ``backend/lucidium.spec`` reaches into PyInstaller
 # internals (``PyInstaller.utils.hooks``, ``collect_*`` helpers, the
@@ -159,6 +167,9 @@ packages = ["src/lucidium"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+# pytest-asyncio >=1.4.1 warns (an error under ``filterwarnings``
+# below) when this is unset. Every fixture here is function-scoped.
+asyncio_default_fixture_loop_scope = "function"
 # Default: exclude tests marked ``live`` (real LLM + ComfyUI) and
 # ``embedded_live`` (real diffusers pipeline against an installed
 # checkpoint). Both take many minutes per run and need external
