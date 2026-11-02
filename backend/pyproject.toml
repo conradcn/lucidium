@@ -144,7 +144,7 @@ safety = [
     # shares the ``cv2`` package dir with the headless wheel. Left
     # unpinned it resolves to 5.x and can overwrite the Haar cascade
     # API the face-detail pass needs (#74).
-    "opencv-python<5",
+    "opencv-python<6",
 ]
 # Build-time only. ``backend/lucidium.spec`` reaches into PyInstaller
 # internals (``PyInstaller.utils.hooks``, ``collect_*`` helpers, the
