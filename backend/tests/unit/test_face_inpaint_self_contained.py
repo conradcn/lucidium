@@ -3,12 +3,13 @@
   * Pipeline weights — reused from the already-loaded text2img
     pipeline (same vae / unet / encoders / tokenizers). No
     second checkpoint, no download.
-  * Face-detector model — opencv haar cascade XML, bundled via
-    the spec's cv2/data datas entry.
+  * Face-detector model — the YuNet ONNX checked in under
+    ``lucidium/providers/models/``, bundled via the spec's datas
+    entry at the same package-relative path.
 
 If either drifts, a packaged user offline render either fails
-with a network error or silently falls back to body-only with no
-face-detail pass at all. Pin both via spec-source inspection +
+with a network error or runs body-only with no face-detail pass
+at all. Pin both via spec-source inspection +
 embedded-image-client structural checks.
 """
 
@@ -16,6 +17,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from lucidium.providers import embedded_image_client
 from lucidium.providers.embedded_image_client import (
     _build_inpaint_pipeline,
 )
@@ -26,18 +28,30 @@ def _read_spec() -> str:
     return spec.read_text(encoding="utf-8")
 
 
-def test_spec_bundles_haar_cascade_data() -> None:
-    """The spec's datas list must include the cv2/data
-    directory (or at least the explicit XML lookup path) so the
-    haar cascade XML rides into ``_internal/cv2/data/`` in the
-    bundle."""
+def test_face_detector_model_ships_in_package() -> None:
+    """The YuNet model is checked in next to the client that loads
+    it, so neither dev runs nor renders ever download it."""
+    model = embedded_image_client._YUNET_MODEL_PATH
+    assert model.is_file(), f"YuNet face-detector model missing at {model}"
+    package_root = Path(embedded_image_client.__file__).resolve().parents[1]
+    assert model.resolve().is_relative_to(package_root), (
+        f"YuNet model {model} must live inside the lucidium package so "
+        f"the wheel and the frozen bundle carry it"
+    )
+
+
+def test_spec_bundles_face_detector_model() -> None:
+    """The spec's datas list must carry the YuNet ONNX to
+    ``lucidium/providers/models`` inside the bundle — the path the
+    client resolves relative to its own ``__file__``. Without it the
+    packaged face-detail pass raises ``FaceDetectorUnavailableError``
+    on every render."""
     src = _read_spec()
-    # The spec resolves the cv2 data dir via ``_cv2.data.haarcascades``
-    # at spec evaluation time — pin that bit of source.
-    assert "haarcascades" in src, (
-        "spec must reference cv2's haarcascades data path; "
-        "without it the face-detail bbox detector falls back "
-        "to a geometric guess that often misses the face."
+    model = embedded_image_client._YUNET_MODEL_PATH
+    assert model.name in src, f"spec must bundle {model.name}"
+    assert '"lucidium/providers/models"' in src, (
+        "spec must place the YuNet model at lucidium/providers/models, "
+        "matching embedded_image_client._YUNET_MODEL_PATH"
     )
 
 
