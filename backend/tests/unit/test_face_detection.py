@@ -2,74 +2,123 @@
 
 Covers two paths:
 
-  * ``_detect_face_bbox`` — opencv Haar cascade. Returns the
-    largest detected face as ``(left, top, right, bottom)`` or
-    ``None`` when no face / opencv missing / cascade load failed.
-    These tests don't actually drive the cascade against a real
-    SDXL render (that's covered by the embedded_live tests); they
-    pin the API contract: gracefully return None on inputs the
-    cascade can't process, and pick the largest face when there
-    are multiple candidates.
+  * ``_detect_face_bbox`` — opencv YuNet (``cv2.FaceDetectorYN``).
+    Returns the largest detected face as ``(left, top, right,
+    bottom)`` or ``None`` when no face was found, and raises
+    ``FaceDetectorUnavailableError`` when the detector itself can't
+    run (opencv missing, no ``FaceDetectorYN``, model missing) — a
+    broken detector must never look like "no faces" (#74). One test
+    drives the real detector against the checked-in Dream Guide
+    placeholder render, so an opencv upgrade that loads the model
+    but stops finding faces fails here too.
   * ``_estimate_face_dimensions`` — geometric fallback used when
-    opencv isn't installed or detection fails on a particular
-    render. Pins that full-body framings get a small face
+    detection finds no face on a particular render. Pins that full-body framings get a small face
     estimate, head-and-shoulders framings get a large one, and
     the fallback never returns zero / negative dimensions.
 """
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+
 import pytest
 from PIL import Image
 
+from lucidium.providers import embedded_image_client
 from lucidium.providers.embedded_image_client import (
+    FaceDetectorUnavailableError,
     _detect_face_bbox,
+    _detect_face_bboxes,
     _estimate_face_dimensions,
+    _load_face_detector,
+)
+
+_DREAM_GUIDE = (
+    Path(__file__).resolve().parents[2] / "workflows" / "placeholders" / "dream_guide.png"
 )
 
 
+@pytest.fixture
+def fresh_detector(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Drop the cached detector so the test exercises the load path."""
+    monkeypatch.setattr(embedded_image_client, "_FACE_DETECTOR", None)
+
+
+def test_installed_opencv_ships_face_detector() -> None:
+    """The installed opencv must provide ``FaceDetectorYN`` and the
+    packaged YuNet model must load. OpenCV 5 dropped the Haar cascade
+    API detection used to rely on; detection caught the
+    AttributeError and returned no faces, silently disabling the
+    face-detail pass (#74). Fail loudly here instead."""
+    import cv2
+
+    assert hasattr(cv2, "FaceDetectorYN"), f"opencv {cv2.__version__} has no FaceDetectorYN"
+    model = embedded_image_client._YUNET_MODEL_PATH
+    assert model.is_file(), f"YuNet face-detector model missing at {model}"
+    assert _load_face_detector() is not None
+
+
+def test_face_detection_finds_face_in_real_render() -> None:
+    """End-to-end check against a real render: the Dream Guide
+    placeholder (a full-figure portrait with alpha) has one face at
+    the top-centre. Catches an opencv build that loads the model but
+    no longer produces detections."""
+    image = Image.open(_DREAM_GUIDE).convert("RGBA")
+    alpha = image.getchannel("A")
+    faces = _detect_face_bboxes(image, figure_bbox=alpha.getbbox(), alpha=alpha)
+    assert len(faces) == 1, f"expected exactly one face, got {faces}"
+    left, top, right, bottom = faces[0]
+    cx, cy = (left + right) // 2, (top + bottom) // 2
+    assert abs(cx - 411) <= 40 and abs(cy - 171) <= 40, (
+        f"face centre {(cx, cy)} is not on the Dream Guide's head (~(411, 171))"
+    )
+    assert 50 <= right - left <= 150 and 70 <= bottom - top <= 200, faces[0]
+
+
 def test_face_detection_returns_none_for_blank_image() -> None:
-    """A solid-colour blank PNG has no face. The cascade should
-    return None rather than e.g. flagging a corner. This guards the
-    contract: ``_detect_face_bbox`` never raises, only returns a
-    bbox or None."""
+    """A solid-colour blank PNG has no face. The detector should
+    return None rather than e.g. flagging a corner."""
     blank = Image.new("RGB", (512, 512), (128, 128, 128))
     assert _detect_face_bbox(blank) is None
 
 
-def test_face_detection_returns_none_when_opencv_missing(
-    monkeypatch,
+def test_face_detection_raises_when_opencv_missing(
+    monkeypatch: pytest.MonkeyPatch,
+    fresh_detector: None,
 ) -> None:
-    """When opencv isn't installed, detection short-circuits to
-    None without raising. The fallback heuristic takes over in
-    the calling code."""
-    import sys
-
-    # Force the import inside _detect_face_bbox to fail by injecting
-    # a sentinel that raises ImportError on attribute access.
-    real_cv2 = sys.modules.pop("cv2", None)
+    """When opencv can't be imported, detection raises instead of
+    reporting "no faces". The face-detail and expression callers log
+    the failure and carry on with the body render, so it shows up in
+    the log rather than silently disabling the pass (#74)."""
+    # ``None`` in sys.modules makes ``import cv2`` raise ImportError.
     monkeypatch.setitem(sys.modules, "cv2", None)
-    try:
-        result = _detect_face_bbox(Image.new("RGB", (128, 128), (0, 0, 0)))
-    finally:
-        if real_cv2 is not None:
-            sys.modules["cv2"] = real_cv2
-        else:
-            sys.modules.pop("cv2", None)
-    assert result is None
+    with pytest.raises(FaceDetectorUnavailableError, match="not installed"):
+        _detect_face_bbox(Image.new("RGB", (128, 128), (0, 0, 0)))
 
 
-def test_installed_opencv_ships_haar_cascade() -> None:
-    """The installed opencv must still provide the Haar cascade API
-    and its XML data. OpenCV 5 dropped both; detection caught the
-    AttributeError and returned no faces, silently disabling the
-    face-detail pass (#74). Fail loudly here instead."""
-    cv2 = pytest.importorskip("cv2")
-    assert hasattr(cv2, "CascadeClassifier"), (
-        f"opencv {cv2.__version__} has no CascadeClassifier; keep opencv-python-headless below 5"
-    )
-    path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-    assert not cv2.CascadeClassifier(path).empty(), f"haar cascade XML missing or empty at {path}"
+def test_face_detection_raises_when_opencv_lacks_face_detector(
+    monkeypatch: pytest.MonkeyPatch,
+    fresh_detector: None,
+) -> None:
+    """An opencv build without ``FaceDetectorYN`` is the #74 failure
+    mode (an API removed under us) — it must raise, not return []."""
+    monkeypatch.setitem(sys.modules, "cv2", SimpleNamespace(__version__="9.9.9"))
+    with pytest.raises(FaceDetectorUnavailableError, match="FaceDetectorYN"):
+        _detect_face_bboxes(Image.new("RGB", (128, 128), (0, 0, 0)))
+
+
+def test_face_detection_raises_when_model_missing(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fresh_detector: None,
+) -> None:
+    """A missing YuNet ONNX (e.g. a bundle built without it) must
+    raise rather than look like a faceless render."""
+    monkeypatch.setattr(embedded_image_client, "_YUNET_MODEL_PATH", tmp_path / "missing.onnx")
+    with pytest.raises(FaceDetectorUnavailableError, match="model missing"):
+        _detect_face_bboxes(Image.new("RGB", (128, 128), (0, 0, 0)))
 
 
 def test_estimate_face_dimensions_full_body_gives_small_face() -> None:

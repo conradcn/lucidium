@@ -83,15 +83,15 @@ dependencies = [
     "rembg[cpu]>=2.0.86,<3",
     "safetensors>=0.8.0,<1",
     # ``opencv-python-headless`` powers the face-detector that
-    # positions the embedded face-detail inpaint pass. Haar
-    # cascade XML files ship with the wheel — no extra model
-    # download. The ``-headless`` variant skips Qt / GUI deps
-    # which the engine never uses; install size stays modest
-    # (~70 MB) and there's no Wayland/X11 friction on Linux.
-    # Held below 5: OpenCV 5 dropped ``cv2.CascadeClassifier`` and
-    # the bundled ``haarcascade_*.xml`` files, which silently
-    # disabled the face-detail pass (#74).
-    "opencv-python-headless>=4.14.0.94,<5",
+    # positions the embedded face-detail inpaint pass
+    # (``cv2.FaceDetectorYN``, present in 4.x and 5.x; its YuNet
+    # ONNX ships inside the package — no model download). The
+    # ``-headless`` variant skips Qt / GUI deps which the engine
+    # never uses; install size stays modest (~70 MB) and there's
+    # no Wayland/X11 friction on Linux. Detection used to rely on
+    # the Haar cascade API that OpenCV 5 dropped (#74);
+    # ``tests/unit/test_face_detection.py`` guards the new path.
+    "opencv-python-headless>=4.14.0.94,<6",
     # ``torchao`` gives native fp8 (e4m3fn) dynamic-activation /
     # weight quantization for the Qwen-Image transformer — it runs the
     # GEMMs on the GPU's fp8 tensor cores via ``torch._scaled_mm``
@@ -141,10 +141,11 @@ safety = [
     "nudenet>=3.4.2,<4",
     "insightface>=2.1,<3",
     # insightface pulls the non-headless ``opencv-python``, which
-    # shares the ``cv2`` package dir with the headless wheel. Left
-    # unpinned it resolves to 5.x and can overwrite the Haar cascade
-    # API the face-detail pass needs (#74).
-    "opencv-python<5",
+    # shares the ``cv2`` package dir with the headless wheel, so
+    # whichever installs last provides ``cv2``. Capped at the same
+    # major as the headless pin above so neither can bring in an
+    # opencv the face detector hasn't been tested against (#74).
+    "opencv-python<6",
 ]
 # Build-time only. ``backend/lucidium.spec`` reaches into PyInstaller
 # internals (``PyInstaller.utils.hooks``, ``collect_*`` helpers, the

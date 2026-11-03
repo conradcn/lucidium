@@ -994,7 +994,7 @@ class EmbeddedImageClient:
         subject_kind = str(params.get("subject_kind", "human"))
         face_prompt = str(params.get("face_prompt", "")).strip()
         if subject_kind == "nonhuman" or not face_prompt:
-            # Non-human portraits don't have a Haar-detectable face, and
+            # Non-human portraits don't have a detectable human face, and
             # with no expression cue there's nothing to refresh.
             return None
 
@@ -3311,7 +3311,7 @@ def _run_face_inpaint(
     one step at a time:
 
       1. Detect ALL faces (Impact-Pack uses a YOLO bbox detector;
-         we use opencv's Haar cascade with stricter filtering).
+         we use opencv's YuNet detector with stricter filtering).
       2. For each face, build a padded crop region (``crop_factor``
          around the bbox).
       3. Resize the crop UP to ``guide_size`` so the face occupies
@@ -3354,7 +3354,7 @@ def _run_face_inpaint(
     if not detected:
         # No face survived detection — fall back to a single-face
         # geometric guess so the pass still does *something* on
-        # profile / occluded renders the cascade misses.
+        # profile / occluded renders the detector misses.
         face_h_est, face_w_est = _estimate_face_dimensions(
             figure_bbox,
             canvas_width=width,
@@ -3404,7 +3404,7 @@ def _run_face_inpaint(
     _log.info(
         "face-detail: %d face(s) to inpaint (source=%s)",
         len(detected),
-        "fallback" if fallback_used else "haar",
+        "fallback" if fallback_used else "yunet",
     )
 
     # Inpaint each face in turn. Updates accumulate on ``base_image``
@@ -3473,7 +3473,7 @@ def _run_expression_inpaint(
     the pose, hair, and framing — we img2img-inpaint just the face at
     ``strength`` (0.5) denoise:
 
-      1. Locate the face with OpenCV (the shared Haar-cascade detector).
+      1. Locate the face with OpenCV (the shared YuNet detector).
       2. Mask the face bbox grown by ``boundary_radius`` (30 px) with a
          Gaussian soft fade, so the new pixels blend into the unchanged
          surroundings.
@@ -3745,7 +3745,82 @@ def _inpaint_one_face(
     return base_image
 
 
-_HAAR_CASCADE = None  # lazy-loaded on first detection call
+# YuNet face detector (``cv2.FaceDetectorYN``). Replaced the Haar
+# cascade, which OpenCV 5 removed along with its XML data (#74).
+# ``FaceDetectorYN`` exists in both 4.x and 5.x; its ~230 KB ONNX
+# model (MIT, from opencv_zoo) ships inside the package next to this
+# module so dev, CI and the frozen build all find it offline —
+# ``lucidium.spec`` bundles it at the same relative path. Source:
+# opencv/opencv_zoo models/face_detection_yunet (commit f12e127),
+# sha256 8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4.
+_YUNET_MODEL_PATH = Path(__file__).resolve().parent / "models" / "face_detection_yunet_2023mar.onnx"
+# Detector confidence floor — YuNet's reference value. On the
+# ``backend/eval`` character renders, thresholds from 0.6 to 0.9 found
+# the same faces, so there's no recall to buy by loosening it.
+_YUNET_SCORE_THRESHOLD = 0.9
+_YUNET_NMS_THRESHOLD = 0.3
+# Longest side the detector sees. Renders are downscaled to this
+# before detection (boxes are scaled back) so a 2x-upscaled portrait
+# doesn't cost 4x the CPU time; faces stay far above YuNet's ~10 px
+# minimum at this size.
+_YUNET_MAX_SIDE = 1024
+
+_FACE_DETECTOR: Any = None  # lazy-loaded on first detection call
+# ``FaceDetectorYN`` is stateful (``setInputSize`` then ``detect``),
+# so concurrent renders on different pipelines must not interleave.
+_FACE_DETECTOR_LOCK = threading.Lock()
+
+
+class FaceDetectorUnavailableError(RuntimeError):
+    """The face detector itself can't run — opencv missing, an opencv
+    build without ``FaceDetectorYN``, or the YuNet model missing /
+    unloadable.
+
+    Raised instead of returning "no faces": a broken detector that
+    looks like an empty detection silently disabled the face-detail
+    pass for every render (#74). Callers of the face-detail and
+    expression passes already catch exceptions, log the failure, and
+    continue with the body render, so this surfaces in the log
+    without failing the render."""
+
+
+def _load_face_detector() -> Any:
+    """Return the shared YuNet detector, building it on first use.
+
+    Raises :class:`FaceDetectorUnavailableError` when it can't be
+    built. Failures aren't cached, so fixing the install takes effect
+    without a restart."""
+    global _FACE_DETECTOR
+    if _FACE_DETECTOR is not None:
+        return _FACE_DETECTOR
+    try:
+        import cv2
+    except ImportError as exc:
+        raise FaceDetectorUnavailableError(
+            "face-detail: opencv is not installed; face detection is unavailable",
+        ) from exc
+    if not hasattr(cv2, "FaceDetectorYN"):
+        raise FaceDetectorUnavailableError(
+            f"face-detail: opencv {cv2.__version__} has no FaceDetectorYN",
+        )
+    if not _YUNET_MODEL_PATH.is_file():
+        raise FaceDetectorUnavailableError(
+            f"face-detail: YuNet model missing at {_YUNET_MODEL_PATH}",
+        )
+    try:
+        detector = cv2.FaceDetectorYN.create(
+            str(_YUNET_MODEL_PATH),
+            "",
+            (320, 320),
+            _YUNET_SCORE_THRESHOLD,
+            _YUNET_NMS_THRESHOLD,
+        )
+    except Exception as exc:
+        raise FaceDetectorUnavailableError(
+            f"face-detail: failed to load YuNet model {_YUNET_MODEL_PATH}: {exc}",
+        ) from exc
+    _FACE_DETECTOR = detector
+    return detector
 
 
 def _bbox_iou(
@@ -3773,7 +3848,7 @@ def _bbox_overlap_fraction(
 
     Used to filter face detections that landed outside the figure's
     alpha silhouette — a face on a wall, in a reflection, on the
-    fabric of a dress, etc., that the Haar cascade flagged as a
+    fabric of a dress, etc., that the face detector flagged as a
     false positive."""
     inter_l = max(inner[0], outer[0])
     inter_t = max(inner[1], outer[1])
@@ -3802,17 +3877,24 @@ def _detect_face_bboxes(
     figure_bbox: tuple[int, int, int, int] | None = None,
     alpha: Any = None,
 ) -> list[tuple[int, int, int, int]]:
-    """Run an opencv Haar-cascade face detector on ``image`` and
-    return ALL surviving face bboxes as ``(left, top, right, bottom)``.
+    """Run the YuNet face detector (``cv2.FaceDetectorYN``) on
+    ``image`` and return ALL surviving face bboxes as
+    ``(left, top, right, bottom)``.
+
+    Raises :class:`FaceDetectorUnavailableError` when the detector
+    itself can't run (see :func:`_load_face_detector`) — never
+    reported as "no faces" (#74). Per-image detection errors are
+    logged and yield ``[]``.
 
     Filtering pipeline (applied in this order):
 
-      1. **Cascade detection** with stricter ``minNeighbors=8`` and
-         ``scaleFactor=1.08``. Higher than opencv's defaults, lower
-         false-positive rate. minSize is 5% of the shorter side.
+      1. **YuNet detection** at score ≥ ``_YUNET_SCORE_THRESHOLD``
+         with its built-in NMS, on a copy downscaled to at most
+         ``_YUNET_MAX_SIDE``. Faces smaller than 5% of the shorter
+         side (min 48 px) are dropped.
       2. **Aspect ratio** — face_h / face_w must be in [0.7, 1.6].
          Anything wider or taller is almost certainly a non-face
-         pattern the cascade hallucinated (a dress fold, a column,
+         pattern the detector hallucinated (a dress fold, a column,
          a wall texture). The user reported a false positive that
          "put an eye in the middle of someone's dress" — that was
          a low-aspect detection on cloth folds.
@@ -3825,39 +3907,15 @@ def _detect_face_bboxes(
          (alpha > 200). Catches false positives on the see-through
          halo that survives rembg's threshold.
       5. **NMS-lite** — drop any detection that overlaps another
-         (kept) detection by IoU > 0.4. The cascade often flags
-         the same face two or three times at different scales.
+         (kept) detection by IoU > 0.4. A backstop for overlapping
+         boxes YuNet's own NMS (IoU > 0.3) let through.
 
     Returns the filtered list in descending order of area so the
     primary subject's face comes first.
     """
-    global _HAAR_CASCADE
-    try:
-        import cv2
-        import numpy as np
-    except ImportError:
-        return []
-
-    if _HAAR_CASCADE is None:
-        try:
-            # cv2's bundled stubs omit ``data``.
-            cascade_path = (
-                cv2.data.haarcascades  # type: ignore[attr-defined]
-                + "haarcascade_frontalface_default.xml"
-            )
-            cascade = cv2.CascadeClassifier(cascade_path)
-            if cascade.empty():
-                _log.warning(
-                    "face-detail: opencv haar cascade XML loaded empty",
-                )
-                return []
-            _HAAR_CASCADE = cascade
-        except Exception:
-            _log.warning(
-                "face-detail: failed to load opencv haar cascade",
-                exc_info=True,
-            )
-            return []
+    detector = _load_face_detector()
+    import cv2
+    import numpy as np
 
     try:
         if image.mode != "RGB":
@@ -3865,25 +3923,47 @@ def _detect_face_bboxes(
         else:
             rgb = image
         arr = np.array(rgb)
-        gray = cv2.cvtColor(arr, cv2.COLOR_RGB2GRAY)
-        raw = _HAAR_CASCADE.detectMultiScale(
-            gray,
-            scaleFactor=1.08,
-            minNeighbors=8,
-            minSize=(max(48, min(arr.shape[:2]) // 20),) * 2,
-        )
+        height, width = arr.shape[:2]
+        scale = min(1.0, _YUNET_MAX_SIDE / max(height, width))
+        bgr = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+        if scale < 1.0:
+            bgr = cv2.resize(
+                bgr,
+                (max(1, round(width * scale)), max(1, round(height * scale))),
+                interpolation=cv2.INTER_AREA,
+            )
+        with _FACE_DETECTOR_LOCK:
+            detector.setInputSize((bgr.shape[1], bgr.shape[0]))
+            _, faces = detector.detect(bgr)
     except Exception:
         _log.warning(
             "face-detail: opencv detection raised",
             exc_info=True,
         )
         return []
-    if len(raw) == 0:
+    if faces is None or len(faces) == 0:
         return []
 
-    # Convert raw (x,y,w,h) → (l,t,r,b) for the rest of the pipeline.
+    # Each YuNet row is (x, y, w, h, 5 landmark pairs, score) in the
+    # detector's input space; map back to the full-size image and drop
+    # faces below the size floor (5% of the shorter side, min 48 px).
+    min_side = max(48, min(height, width) // 20)
+    raw = [
+        (x / scale, y / scale, w / scale, h / scale)
+        for x, y, w, h in (row[:4] for row in faces)
+        if w / scale >= min_side and h / scale >= min_side
+    ]
+
+    # Convert raw (x,y,w,h) → (l,t,r,b) for the rest of the pipeline,
+    # clamped to the image: YuNet boxes can poke past the frame edge.
     candidates: list[tuple[int, int, int, int]] = [
-        (int(x), int(y), int(x + w), int(y + h)) for (x, y, w, h) in raw
+        (
+            max(0, int(x)),
+            max(0, int(y)),
+            min(width, int(x + w)),
+            min(height, int(y + h)),
+        )
+        for (x, y, w, h) in raw
     ]
 
     alpha_arr = None
