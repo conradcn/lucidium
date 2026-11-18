@@ -4,3 +4,7 @@
 # line endings, and ``/usr/bin/env bash`` chokes with
 # ``/usr/bin/env\r: No such file or directory`` on WSL / Linux.
 *.sh text eol=lf
+
+# Model weights checked into the source tree (the YuNet face detector
+# under backend/src/lucidium/providers/models/). Never EOL-convert.
+*.onnx binary

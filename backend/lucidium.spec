@@ -235,13 +235,6 @@ hidden.extend(collect_submodules("pydantic_core"))
 # Package data: workflows JSONs ship next to the EXE so the
 # engine's resolver finds them at the same relative path it
 # uses in dev (``backend/workflows/*.json``).
-#
-# OpenCV's haarcascade XMLs ship under ``cv2/data/`` in the
-# wheel, but ``collect_data_files("cv2")`` only picks up the
-# Python sources — the XMLs sit on a non-package path that
-# PyInstaller skips by default. Bundle them explicitly so the
-# face-detail bbox detector can load
-# ``haarcascade_frontalface_default.xml`` at runtime.
 datas = [
     (str(WORKFLOWS_DIR), "workflows"),
 ] + _extra_datas
@@ -326,16 +319,18 @@ else:
         "lucidium.spec: LUCIDIUM_BUNDLED_OVERLAY_DIR unset/missing — building "
         "WITHOUT a baked CPU overlay (first render will need a torch download)"
     )
-try:
-    import cv2 as _cv2  # noqa: F401 -- import for side-effects (resolves data path)
-    _cv2_data_dir = Path(_cv2.data.haarcascades)
-    if _cv2_data_dir.is_dir():
-        # ``include_py_files=False`` to avoid duplicating .py
-        # files that ``collect_submodules('cv2')`` already
-        # bundles via Analysis.
-        datas.append((str(_cv2_data_dir), "cv2/data"))
-except Exception:  # noqa: BLE001 -- cv2 may not be installed
-    pass
+# Bundle the YuNet face-detector ONNX that positions the embedded
+# face-detail inpaint pass (``cv2.FaceDetectorYN``). It lives in the
+# source tree next to ``embedded_image_client.py``, which resolves it
+# as ``Path(__file__).parent / "models"`` — so it lands at the same
+# package-relative path inside ``_internal/``. PyInstaller skips
+# non-Python files in packages unless told otherwise. The file is
+# checked in, so a missing one is a broken checkout: fail the build
+# rather than ship a bundle whose face-detail pass can't run (#74).
+_YUNET_MODEL = SRC_DIR / "lucidium" / "providers" / "models" / "face_detection_yunet_2023mar.onnx"
+if not _YUNET_MODEL.is_file():
+    raise SystemExit(f"lucidium.spec: YuNet face-detector model missing at {_YUNET_MODEL}")
+datas.append((str(_YUNET_MODEL), "lucidium/providers/models"))
 
 binaries = [] + _extra_binaries
 
