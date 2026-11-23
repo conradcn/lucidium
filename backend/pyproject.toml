@@ -91,7 +91,7 @@ dependencies = [
     # no Wayland/X11 friction on Linux. Detection used to rely on
     # the Haar cascade API that OpenCV 5 dropped (#74);
     # ``tests/unit/test_face_detection.py`` guards the new path.
-    "opencv-python-headless>=5.0.0.93,<6",
+    "opencv-python-headless>=5.1.0.95,<6",
     # ``torchao`` gives native fp8 (e4m3fn) dynamic-activation /
     # weight quantization for the Qwen-Image transformer — it runs the
     # GEMMs on the GPU's fp8 tensor cores via ``torch._scaled_mm``
